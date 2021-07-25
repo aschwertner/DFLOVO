@@ -70,7 +70,7 @@ end
 """
 
     verify_index_imin(func_list::Array{Function, 1}, index:: Int64, 
-                        y::Vector{Float64}, fmin_y::Float64)
+                        fmin_y::Float64, y::Vector{Float64})
 
 Check if 'index' belongs to the set Imin(y).
 
@@ -79,9 +79,9 @@ Check if 'index' belongs to the set Imin(y).
 
     - 'index': index of the funtion in 'func_list'.
 
-    - 'y': n-dimensional vector.
-
     - 'fmin_y': objective function value at point 'y'.
+
+    - 'y': n-dimensional vector.
     
 Returns a Boolean value.
 
@@ -89,8 +89,8 @@ Returns a Boolean value.
 function verify_index_imin(
                             func_list::Array{Function, 1}, 
                             index:: Int64,
-                            y::Vector{Float64},
-                            fmin_y::Float64
+                            fmin_y::Float64,
+                            y::Vector{Float64}
                             )
 
     value = true
