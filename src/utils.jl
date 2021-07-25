@@ -7,7 +7,7 @@
     verify_initial_room(n::Int64, Δ::Float64, a::Vector{Float64},
                         b::Vector{Float64})
 
-Checks whether the limits satisfy the conditions 'b' >= 'a' + 2 * 'Δ'.
+Checks whether the bounds satisfy the conditions 'b' >= 'a' + 2 * 'Δ'.
 
     - 'n': dimension of the search space.
 
