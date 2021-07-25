@@ -17,7 +17,7 @@ the set Imin(y).
 
     - 'y': n-dimensional vector.
     
-    Returns Returns the function value 'fmin_y' and the index 'imin_y'.
+    Returns the function value 'fmin_y' and the index 'imin_y'.
 
 """
 function fmin_eval(
@@ -37,5 +37,32 @@ function fmin_eval(
     end
 
     return fmin_y, imin_y
+
+end
+
+"""
+
+    fi_eval(func_list::Array{Function, 1}, index:: Int64, 
+                y::Vector{Float64})
+
+Computes the value of the function f_index(y).
+
+    - 'func_list': list containing the functions that determine the objective
+    function fmin.
+
+    - 'index': index of the funtion in 'func_list'.
+
+    - 'y': n-dimensional vector.
+    
+    Returns the function value.
+
+"""
+function fi_eval(
+                    func_list::Array{Function, 1}, 
+                    index:: Int64,
+                    y::Vector{Float64}
+                    )
+
+    return func_list[index](y)
 
 end
