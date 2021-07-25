@@ -17,7 +17,7 @@ the set Imin(y).
 
     - 'y': n-dimensional vector.
     
-    Returns the function value 'fmin_y' and the index 'imin_y'.
+Returns the function value 'fmin_y' and the index 'imin_y'.
 
 """
 function fmin_eval(
@@ -54,7 +54,7 @@ Computes the value of the function f_index(y).
 
     - 'y': n-dimensional vector.
     
-    Returns the function value.
+Returns the function value.
 
 """
 function fi_eval(
@@ -83,7 +83,7 @@ Check if 'index' belongs to the set Imin(y).
 
     - 'fmin_y': objective function value at point 'y'.
     
-    Returns a Boolean value.
+Returns a Boolean value.
 
 """
 function verify_index_imin(
