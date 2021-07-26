@@ -153,3 +153,186 @@ function reconstruct_original_point!(
     end
 
 end
+
+"""
+
+    construct_initial_set!(func_list::Array{Function,1}, n::Int64, m::Int64,
+                            imin::Int64, maxfun::Int64, fbase::Float64,
+                            δ::Float64, a::Vector{Float64}, b::Vector{Float64},
+                            ao::Vector{Float64}, bo::Vector{Float64},
+                            xbase::Vector{Float64}, countf::Int64,
+                            xopt::Vector{Float64}, fval::Vector{Float64},
+                            gopt::Vector{Float64}, hq::Vector{Float64},
+                            BMAT::Matrix{Float64}, ZMAT::Matrix{Float64},
+                            Y::Matrix{Float64}, x::Vector{Float64})
+                            
+Builds sample set 'Y', vector of function values 'fval', optimal point 'xopt'
+and the first interpolation model.
+
+    - 'func_list': list containing the functions that determine the objective
+    function fmin.
+
+    - 'n': dimension of the search space.
+
+    - 'm': number of interpolation conditions (points).
+
+    - 'imin': index belonging to the set Imin(xbase).
+
+    - 'maxfun': maximum number of function evaluations allowed.
+
+    - 'fbase': objective function value in 'xbase'.
+
+    - 'δ': radius of the sample set.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'ao': n-dimensional vector with the shifted lower bounds.
+
+    - 'bo': n-dimensional vector with the shifted upper bounds.
+
+    - 'xbase': n-dimensional vector (origin of the sample set).
+
+The function modifies the arguments:
+
+    - 'countf': function evaluation counter.
+
+    - 'xopt': n-dimensional vector (optimal point so far).
+
+    - 'gopt': n-dimensional vector (gradient of the quadratic model at 
+    'xbase + xopt').
+
+    - 'hq': (n(n+1)/2)-dimensional vector (explicit second derivatives of the
+    quadratic model).
+
+    - 'BMAT': ((m + n) x n)-dimensional matrix (elements of Ξ and Υ).
+
+    - 'ZMAT': (m x (m - n - 1))-dimensional matrix (elements of Z).
+
+    - 'Y': (n x m)-dimensional matrix (set of sample points).
+
+    - 'x': n-dimensional vector.
+
+Returns the index of 'xopt' in the set 'Y'.
+
+"""
+function construct_initial_set!(
+                                func_list::Array{Function,1},
+                                n::Int64,
+                                m::Int64,
+                                imin::Int64,
+                                maxfun::Int64,
+                                fbase::Float64,
+                                δ::Float64,
+                                a::Vector{Float64}, 
+                                b::Vector{Float64},
+                                ao::Vector{Float64}, 
+                                bo::Vector{Float64},
+                                xbase::Vector{Float64},
+                                countf::Int64,
+                                xopt::Vector{Float64},
+                                fval::Vector{Float64},
+                                gopt::Vector{Float64},
+                                hq::Vector{Float64},
+                                BMAT::Matrix{Float64},
+                                ZMAT::Matrix{Float64},
+                                Y::Matrix{Float64},
+                                x::Vector{Float64}
+                                )
+    
+    fval[1] = fbase
+    kopt = 1
+    aux = 1.0 / δ ^ 2.0
+
+    for i = 0:min( m - 1, maxfun )
+        j = i - n
+        k = i + 1
+        if i <= (2 * n)
+            if (i >= 1) && ( i <= n )
+                α = δ
+                if bo[i] == 0.0
+                    α *= - 1.0
+                end
+                Y[i, k] = α
+            elseif i > n
+                α = Y[j, k - n]
+                β = - δ
+                if ao[j] == 0.0
+                    β = min(2.0 * δ, bo[j])
+                elseif bo[j] == 0.0
+                    β = max(- 2.0 * δ, ao[j])
+                end
+                Y[j, k] = β
+            end
+        else
+            tmp = div(i - n - 1, n)
+            p_j = i - tmp * n - n
+            q_j = p_j + tmp
+            if q_j > n
+                tmp = p_j
+                p_j = q_j - n
+                q_j = tmp
+            end
+            Y[p_j, k] = Y[p_j, p_j + 1]
+            Y[q_j, k] = Y[q_j, q_j + 1]
+        end
+
+        if i > 0
+            reconstruct_original_point!(k, n, a, b, ao, bo, xbase, Y, x)
+            fk = fi_eval(func_list, imin, x)
+            countf += 1
+        end
+
+        if fk < fval[kopt]
+            kopt = k
+        end
+
+        if k <= ( 2 * n + 1 )
+            if ( k >= 2 ) && ( k <= n + 1 )
+                gopt[i] = (fk - fbase) / α
+                if m < ( k + n )
+                    BMAT[1, i] = - 1.0 / α
+                    BMAT[k, i] = 1.0 / α
+                    BMAT[m + i, i] = - 0.5 * δ ^ 2.0
+                end
+            elseif k >= n + 2
+                idx_h = convert(Int64, j * ( j + 1 ) / 2)
+                tmp = (fk - fbase) / β
+                diff = β - α
+                hq[idx_h] = 2.0 * ( tmp - gopt[j] ) / diff
+                gopt[j] = ( gopt[j] * β - tmp * α ) / diff
+                if α * β < 0.0
+                    if fk < fval[k - n]
+                        fval[k] = fval[k - n]
+                        fval[k - n] = fk
+                        if kopt == k
+                            kopt = k - n
+                        end
+                        Y[j, k - n] = β
+                        Y[j, k] = α
+                    end
+                end
+                BMAT[1, j] = - ( α + β ) / ( α * β )
+                BMAT[k, j] = - 0.5 / Y[j, k - n]
+                BMAT[k - n, j] = - BMAT[1, j] - BMAT[k, j]
+                ZMAT[1, j] = sqrt( 2.0 ) / ( α * β )
+                ZMAT[k, j] = sqrt( 0.5 ) / δ ^ 2.0
+                ZMAT[k - n, j] = - ZMAT[1, j] - ZMAT[k, j]
+            end
+        else
+            idx_h = convert(Int64, q_j * ( q_j - 1 ) / 2) + p_j
+            ZMAT[1, j] = aux
+            ZMAT[k, j] = aux
+            ZMAT[q_j + 1, j] = - aux
+            ZMAT[p_j + 1, j] = - aux
+            tmp = Y[q_j, k] * Y[p_j, k]
+            hq[idx_h] = ( fbase - fval[q_j + 1] - fval[p_j + 1] + fk ) / tmp
+        end
+    end
+
+    copyto!(xopt, fval[kopt])
+
+    return kopt
+
+end
