@@ -100,3 +100,56 @@ function correct_guess_bounds!(
     end
 
 end
+
+"""
+
+    reconstruct_original_point!(idx::Int64, n::Int64, a::Vector{Float64}, 
+                                b::Vector{Float64}, ao::Vector{Float64}, 
+                                bo::Vector{Float64}, xbase::Vector{Float64},
+                                Y::Matrix{Float64}, x::Vector{Float64})
+
+Reconstructs the original point given its position 'idx' in the sample set  'Y'.
+
+    - 'idx': index of the funtion in 'func_list'.
+
+    - 'n': dimension of the search space.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'ao': n-dimensional vector with the shifted lower bounds.
+
+    - 'bo': n-dimensional vector with the shifted upper bounds.
+
+    - 'xbase': n-dimensional vector (origin of the sample set).
+
+    - 'Y': (n x m)-dimensional matrix (set of sample points).
+
+    - 'x': n-dimensional vector.
+
+Modifies the vector 'x' to become the desired point.
+
+"""
+function reconstruct_original_point!(
+                                        idx::Int64,
+                                        n::Int64,
+                                        a::Vector{Float64}, 
+                                        b::Vector{Float64},
+                                        ao::Vector{Float64}, 
+                                        bo::Vector{Float64},
+                                        xbase::Vector{Float64},
+                                        Y::Matrix{Float64},
+                                        x::Vector{Float64}
+                                        )
+    
+    for i=1:n
+        x[i] = min( max( a[i], xbase[i] + Y[i, idx] ), b[i] )
+        if Y[i, idx] == ao[i]
+            x[i] = a[i]
+        elseif Y[i, idx] == bo[i]
+            x[i] = b[i]
+        end
+    end
+
+end
