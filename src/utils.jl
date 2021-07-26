@@ -336,3 +336,75 @@ function construct_initial_set!(
     return kopt
 
 end
+
+"""
+
+    update_gopt!(n::Int64, m::Int64, r::Int64, countf::Int64,
+                    xopt::Vector{Float64}, hq::Vector{Float64},
+                    pq::Vector{Float64}, Y::Matrix{Float64},
+                    gopt::Vector{Float64})
+
+Updates the gradient of the model in the case that the best optimal so far
+'xopt' is not the origin of the sample set 'xbase'.
+
+    - 'n': dimension of the search space.
+
+    - 'm': number of interpolation conditions (points).
+
+    - 'r': number of functions that make up the objective function fmin.
+
+    - 'countf': function evaluation counter.
+
+    - 'xopt': n-dimensional vector (optimal point so far).
+
+    - 'hq': (n(n+1)/2)-dimensional vector (explicit second derivatives of the
+    quadratic model).
+
+    - 'pq': m-dimensional vector (parameters of the implicit second derivatives
+    of the quadratic model).
+
+    - 'Y': (n x m)-dimensional matrix (set of sample points).
+
+The function modifies the argument:
+
+    - 'gopt': n-dimensional vector (gradient of the quadratic model at 
+    'xbase + xopt').
+
+"""
+function update_gopt!(
+                        n::Int64,
+                        m::Int64,
+                        r::Int64,
+                        countf::Int64,
+                        xopt::Vector{Float64},
+                        hq::Vector{Float64},
+                        pq::Vector{Float64},
+                        Y::Matrix{Float64},
+                        gopt::Vector{Float64}
+                        )
+
+    idx_h = 0
+
+    for j=1:n
+        for i=1:j
+            idx_h += 1
+            if i < j
+               gopt[j] += hq[idx_h] * xopt[i]
+            end
+            gopt[i] += hq[idx_h] * xopt[j]
+        end
+    end
+    if countf > (r + m - 1)
+        for k=1:m
+            tmp = 0.0
+            for j=1:n
+                tmp += Y[j, k] * xopt[j]
+            end
+            tmp *= pq[k]
+            for i=1:n
+                gopt[i] += tmp * Y[i, k]
+            end
+        end
+    end
+
+end
