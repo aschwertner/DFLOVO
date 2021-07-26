@@ -19,7 +19,7 @@
         fmin_return = 0.0
         imin_return = 1
         # Test
-        fmin, imin = fmin_eval(func_list, r, y)
+        fmin, imin = DFLOVO.fmin_eval(func_list, r, y)
         @test( fmin == fmin_return )
         @test( imin == imin_return )
 
@@ -29,7 +29,7 @@
         fmin_return = -1.0
         imin_return = 2
         # Test
-        fmin, imin = fmin_eval(func_list, r, y)
+        fmin, imin = DFLOVO.fmin_eval(func_list, r, y)
         @test( fmin == fmin_return )
         @test( imin == imin_return )
 
@@ -39,7 +39,7 @@
         fmin_return = -1.0
         imin_return = 3
         # Test
-        fmin, imin = fmin_eval(func_list, r, y)
+        fmin, imin = DFLOVO.fmin_eval(func_list, r, y)
         @test( fmin == fmin_return )
         @test( imin == imin_return )
 
@@ -49,7 +49,7 @@
         fmin_return = sin(- 1.0)
         imin_return = 4
         # Test
-        fmin, imin = fmin_eval(func_list, r, y)
+        fmin, imin = DFLOVO.fmin_eval(func_list, r, y)
         @test( fmin == fmin_return )
         @test( imin == imin_return )
 
@@ -69,7 +69,7 @@
         # Expected return
         value_return = 1.0
         # Test
-        value = fi_eval(func_list, index, y)
+        value = DFLOVO.fi_eval(func_list, index, y)
         @test(value == value_return)
         
         # Test parameters
@@ -78,7 +78,7 @@
         # Expected return
         value_return = 0.0
         # Test
-        value = fi_eval(func_list, index, y)
+        value = DFLOVO.fi_eval(func_list, index, y)
         @test(value == value_return)
 
         # Test parameters
@@ -87,7 +87,7 @@
         # Expected return
         value_return = 0.0
         # Test
-        value = fi_eval(func_list, index, y)
+        value = DFLOVO.fi_eval(func_list, index, y)
         @test(value == value_return)
 
         # Test parameters
@@ -96,12 +96,12 @@
         # Expected return
         value_return = 0.0
         # Test
-        value = fi_eval(func_list, index, y)
+        value = DFLOVO.fi_eval(func_list, index, y)
         @test(value == value_return)
 
     end 
 
-    @testset "verify_j_imin" begin
+    @testset "verify_index_imin" begin
 
         f(x) = ( x[1] + x[2] ) ^ 2.0
         g(x) = x[1] - x[2]
@@ -118,10 +118,10 @@
         test_3_return = false
         test_4_return = true
         # Test
-        @test( verify_j_imin(func_list, 1, y, fmin_y) == test_1_return )
-        @test( verify_j_imin(func_list, 2, y, fmin_y) == test_2_return )
-        @test( verify_j_imin(func_list, 3, y, fmin_y) == test_3_return )
-        @test( verify_j_imin(func_list, 4, y, fmin_y) == test_4_return )
+        @test( DFLOVO.verify_index_imin(func_list, 1, fmin_y, y) == test_1_return )
+        @test( DFLOVO.verify_index_imin(func_list, 2, fmin_y, y) == test_2_return )
+        @test( DFLOVO.verify_index_imin(func_list, 3, fmin_y, y) == test_3_return )
+        @test( DFLOVO.verify_index_imin(func_list, 4, fmin_y, y) == test_4_return )
 
         # Test parameters
         y = [0.0, 1.0]
@@ -132,10 +132,10 @@
         test_3_return = false
         test_4_return = false
         # Test
-        @test( verify_j_imin(func_list, 1, y, fmin_y) == test_1_return )
-        @test( verify_j_imin(func_list, 2, y, fmin_y) == test_2_return )
-        @test( verify_j_imin(func_list, 3, y, fmin_y) == test_3_return )
-        @test( verify_j_imin(func_list, 4, y, fmin_y) == test_4_return )
+        @test( DFLOVO.verify_index_imin(func_list, 1, fmin_y, y) == test_1_return )
+        @test( DFLOVO.verify_index_imin(func_list, 2, fmin_y, y) == test_2_return )
+        @test( DFLOVO.verify_index_imin(func_list, 3, fmin_y, y) == test_3_return )
+        @test( DFLOVO.verify_index_imin(func_list, 4, fmin_y, y) == test_4_return )
 
         # Test parameters
         y = [1.0, 1.0]
@@ -146,10 +146,10 @@
         test_3_return = true
         test_4_return = false
         # Test
-        @test( verify_j_imin(func_list, 1, y, fmin_y) == test_1_return )
-        @test( verify_j_imin(func_list, 2, y, fmin_y) == test_2_return )
-        @test( verify_j_imin(func_list, 3, y, fmin_y) == test_3_return )
-        @test( verify_j_imin(func_list, 4, y, fmin_y) == test_4_return )
+        @test( DFLOVO.verify_index_imin(func_list, 1, fmin_y, y) == test_1_return )
+        @test( DFLOVO.verify_index_imin(func_list, 2, fmin_y, y) == test_2_return )
+        @test( DFLOVO.verify_index_imin(func_list, 3, fmin_y, y) == test_3_return )
+        @test( DFLOVO.verify_index_imin(func_list, 4, fmin_y, y) == test_4_return )
 
         # Test parameters
         y = [0.0, - 1.0]
@@ -160,10 +160,10 @@
         test_3_return = false
         test_4_return = true
         # Test
-        @test( verify_j_imin(func_list, 1, y, fmin_y) == test_1_return )
-        @test( verify_j_imin(func_list, 2, y, fmin_y) == test_2_return )
-        @test( verify_j_imin(func_list, 3, y, fmin_y) == test_3_return )
-        @test( verify_j_imin(func_list, 4, y, fmin_y) == test_4_return )
+        @test( DFLOVO.verify_index_imin(func_list, 1, fmin_y, y) == test_1_return )
+        @test( DFLOVO.verify_index_imin(func_list, 2, fmin_y, y) == test_2_return )
+        @test( DFLOVO.verify_index_imin(func_list, 3, fmin_y, y) == test_3_return )
+        @test( DFLOVO.verify_index_imin(func_list, 4, fmin_y, y) == test_4_return )
 
     end
 
