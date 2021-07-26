@@ -54,13 +54,13 @@ shifted to the origin 'x'.
 
     - 'b': n-dimensional vector with the upper bounds.
 
+The function modifies the argument:
+
     - 'x': n-dimensional vector (initial guess).
 
     - 'ao': n-dimensional vector with the shifted lower bounds.
 
     - 'bo': n-dimensional vector with the shifted upper bounds.
-
-Modifies the vectors 'x', 'ao', 'bo'.
 
 """
 function correct_guess_bounds!( 
