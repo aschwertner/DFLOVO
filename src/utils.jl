@@ -126,9 +126,9 @@ Reconstructs the original point given its position 'idx' in the sample set  'Y'.
 
     - 'Y': (n x m)-dimensional matrix (set of sample points).
 
-    - 'x': n-dimensional vector.
+The function modifies the argument:
 
-Modifies the vector 'x' to become the desired point.
+    - 'x': n-dimensional vector.
 
 """
 function reconstruct_original_point!(
