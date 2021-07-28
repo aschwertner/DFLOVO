@@ -4,14 +4,14 @@
 
 """
 
-    verify_initial_room(n::Int64, Δ::Float64, a::Vector{Float64},
+    verify_initial_room(n::Int64, δ::Float64, a::Vector{Float64},
                         b::Vector{Float64})
 
-Checks whether the bounds satisfy the conditions 'b' >= 'a' + 2 * 'Δ'.
+Checks whether the bounds satisfy the conditions 'b' >= 'a' + 2 * 'δ'.
 
     - 'n': dimension of the search space.
 
-    - 'Δ': radius of the trust-region.
+    - 'δ': radius of the sample set.
 
     - 'a': n-dimensional vector with the lower bounds.
 
@@ -22,13 +22,13 @@ Returns a Boolean value.
 """
 function verify_initial_room(
                                 n::Int64, 
-                                Δ::Float64, 
+                                δ::Float64, 
                                 a::Vector{Float64}, 
                                 b::Vector{Float64}
                                 )
 
     for i = 1:n
-        if ( b[i] - a[i] ) < ( 2.0 * Δ )
+        if ( b[i] - a[i] ) < ( 2.0 * δ )
             return false 
         end
     end
