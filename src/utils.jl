@@ -417,8 +417,6 @@ Prints information about the exit flag.
 
     - 'flag': exit flag.
 
-Returns a message in Julia REPL.
-
 """
 function print_info(
                     flag::Int64
