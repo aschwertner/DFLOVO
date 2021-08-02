@@ -61,8 +61,27 @@ import Base: (*)
         @assert 0 ≤ η < η1 "The parameter 'η' must be nonnegative and less than 'η1'."
         @assert η1 ≤ η2 "The parameter 'η2' must be greater than or equal to 'η1'."
         
+        # Sets some useful constants.
+        Δinit = Δ
+        nh = convert(Int64, n * ( n + 1 ) / 2)
 
- 
+        # Initializes useful variables, vectors, and matrices.
+        countit = 0                 # Counts the number of iterations.
+        countf = 0                  # Counts the number of 'f_i' function evaluations.
+        xbase = zeros(n)            # Origin of the sample set.
+        xopt = zeros(n)             # Point with the smallest objective function value.
+        ao = zeros(n)               # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
+        bo = zeros(n)               # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
+        fval = zeros(n)             # Set of the function values of the interpolation points.
+        gopt = zeros(n)             # Holds the gradient of the quadratic model at 'xbase + xopt'
+        hq = zeros(nh)              # Holds the explicit second derivatives of the quadratic model.
+        pq = zeros(m)               # Holds parameters of the implicit second derivatives of the quadratic model.
+        Y = zeros(n, m)             # Set of interpolation points, shifted from the center of the sample set 'xbase'.
+                                        # 'Y = [y1 | y2 | y3 | ... | ym]'.
+        BMAT = zeros(m + n, n)      # Holds the elements of 'Ξ', with the exception of its first column, 
+                                        # and the elements of 'Υ', with the exception of its first row and column. 
+        ZMAT = zeros(m, m - n - 1)  # Holds the elements of 'Z', from the factorization 'Ω = ZZ^T'.
+
     end
 
 end
