@@ -24,9 +24,10 @@ import Base: (*)
                     δ::Float64,
                     Δ::Float64;
                     m::Int64=(2 * length(x) + 1),
-                    itmax::Int64=5000,
+                    maxit::Int64=5000,
                     maxfun::Int64=(1000 * (length(func_list) + m)),
                     Γmax::Int64=1,
+                    δmin::Float64=1.0e-8,
                     β::Float64=1.0,
                     τ1::Float64=0.6,
                     τ2::Float64=1.5,
