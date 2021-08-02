@@ -408,3 +408,43 @@ function update_gopt!(
     end
 
 end
+
+"""
+
+    print_info(flag::Int64)
+
+Prints information about the exit flag. 
+
+    - 'flag': exit flag.
+
+Returns a message in Julia REPL.
+
+"""
+function print_info(
+                    flag::Int64
+                    )
+
+    if flag == 1
+        printstyled("Success: ", bold=true, color=:light_green)
+        println("The algorithm succeeded.")
+    elseif flag == -1
+        printstyled("Warning: ", bold=true, color=:light_red)
+        println("The maximum number of iterations has been reached.")
+    elseif flag == -2
+        printstyled("Warning: ", bold=true, color=:light_red)
+        println("The maximum number of function evaluations has been reached.")
+    elseif flag == -3
+        printstyled("Warning: ", bold=true, color=:light_red)
+        println("The calculated direction is not downhill for the model.")
+    elseif flag == -4
+        printstyled("Warning: ", bold=true, color=:light_red)
+        println("The predicted reduction became too small.")
+    elseif flag == -5
+        printstyled("Warning: ", bold=true, color=:light_red)
+        println("The model gradient norm in the current point has become too small.")
+    else
+        printstyled("Warning: ", bold=true, color=:light_red)
+        println("Exit flag not specified.")
+    end
+
+end
