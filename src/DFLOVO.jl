@@ -86,6 +86,61 @@ import Base: (*)
                                         # and the elements of 'Υ', with the exception of its first row and column. 
         ZMAT = zeros(m, m - n - 1)  # Holds the elements of 'Z', from the factorization 'Ω = ZZ^T'.
 
+        #-------------------- Preparations for the first iteration ---------------------
+
+        # Modifies the initial estimate 'x' to be suitable for building the first model. 
+        # Modifies 'ao' and 'bo' to store the 'a-xbase' and 'b-xbase' differences, respectively.
+        correct_guess_bounds!(n, δ, a, b, x, ao, bo)
+
+        # Saves the origin of the sample set in 'xbase'. Vector 'x' will be used as workspace.
+        copyto!(xbase, x)
+
+        # Computes the value of f_min at 'xbase' and an index 'imin' belonging to the set I_min(xbase).
+        fbase, imin = fmin_eval(func_list, r, xbase)
+
+        # Updates de function call counter.
+        countf += r
+
+        # Builds the initial sample set 'Y', calculates the respective function values 'fval', updates de function call counter 'countf',
+        # determines the elements of 'gopt', 'hq', 'BMAT', and 'ZMAT', and the point with the smallest function value 'xopt'.
+        # Defines 'kopt' as the position of 'xopt' in set 'Y'.
+        kopt, countf = construct_initial_set!(func_list, n, m, imin, maxfun, fbase, δ, a, b, ao, bo, xbase, countf, xopt, fval, gopt, hq, BMAT, ZMAT, Y, x)
+
+        # Defines 'kbase' as the position of 'xbase' in set 'Y', i.e., 'kbase' is set to 1.
+        kbase = 1
+
+        # Saves the objective function value at 'xbase' in
+        fsave = fbase
+
+        # Returns if 'countf' exceeds 'maxfun'.
+        if countf == maxfun
+
+            it_flag = 0
+            exit_flag = -2
+
+            # Prints information about the iteration.
+            if verbose
+                print_iteration(countit, countf, it_flag, δ, Δ, fsave)
+            end
+
+            # Prints information about the exit flag.
+            print_info(exit_flag)
+
+            # Prints additional information
+            if kbase != kopt
+                add_exit_flag = -12
+                print_info(add_exit_flag)
+            end
+            
+            return xbase, fsave, countit, countf, δ, Δ, it_flag, exit_flag
+            
+        end
+        
+
+
+
+
+
     end
 
 end
