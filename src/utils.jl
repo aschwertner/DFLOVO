@@ -490,12 +490,16 @@ function print_iteration(
     else
         it_type = "not especified"
     end
-    println("Iteration: $(countit)")
+    if countit == 0
+        println("--------------------------------------------------------------------------------")
+        println("--------------------------------------------------------------------------------")
+    end
+    println("Iteration  : $(countit)")
     println("Func. eval.: $(countf)")
-    println("δ: $(δ)")
-    println("Δ: $(Δ)")
-    println("It. type: $(it_type)")
-    println("Func. value: $(fsave)")
+    println("δ          : $(δ)")
+    println("Δ          : $(Δ)")
+    println("It. type   : $(it_type)")
+    println("Func. val. : $(fsave)")
     println("--------------------------------------------------------------------------------")
-    
+
 end
