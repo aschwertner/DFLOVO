@@ -449,3 +449,53 @@ function print_info(
     end
 
 end
+
+"""
+
+    print_iteration(countit::Int64, countf::Int64, flag::Int64, 
+                    δ::Float64, Δ::Float64, fsave::Float64)
+                            
+Prints information about the iteration status. 
+
+    - 'countit': iteration count.
+
+    - 'countf': function evaluation counter.
+
+    - 'flag': iteration type flag.
+
+    - 'δ': radius of the sample set.
+
+    - 'Δ': radius of the trust-region.
+
+    - 'fsave': least value of the objective function so far.
+   
+"""
+function print_iteration(
+                            countit::Int64,
+                            countf::Int64,
+                            flag::Int64,
+                            δ::Float64,
+                            Δ::Float64,
+                            fsave::Float64
+                            )
+        
+    if flag == 1
+        it_type = "criticality"
+    elseif flag == 2
+        it_type = "trust-region"
+    elseif flag == 3
+        it_type = "altmov"
+    elseif flag == 4
+        it_type = "altmov-cauchy"
+    else
+        it_type = "not especified"
+    end
+    println("Iteration: $(countit)")
+    println("Func. eval.: $(countf)")
+    println("δ: $(δ)")
+    println("Δ: $(Δ)")
+    println("It. type: $(it_type)")
+    println("Func. value: $(fsave)")
+    println("--------------------------------------------------------------------------------")
+    
+end
