@@ -53,7 +53,7 @@ import Base: (*)
         @assert 0.0 < δ ≤ Δ "The radius of the sample set 'δ' must be positive and less or equal to the trust-region radius 'Δ'."
         @assert verify_initial_room(n, δ, a, b) "The radius of the initial sample set 'δ' is not suitable, it must satisfy a[i]- b[i] >= 2δ, for i = 1, ..., $(n)."
         @assert maxit > 0 "The parameter 'maxit' must be positive."
-        @assert maxfun > 0 "The parameter 'maxfun' must be positive."
+        @assert maxfun ≥ r "The parameter 'maxfun' must be greater than ou equal to $(r)."
         @assert Γmax > 0 "The parameter 'Γmax' must be positive."
         @assert δmin > 0.0 "The parameter 'δmin' must be positive."
         @assert β > 0.0 "The parameter 'β' must be positive."
