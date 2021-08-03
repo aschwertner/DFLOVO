@@ -11,6 +11,7 @@ module DFLOVO
     using Base: Float64
 import Base: (*)
     using LinearAlgebra
+    using Printf
 
     # Load code
     include("lovo_utils.jl")
