@@ -200,6 +200,9 @@ The function modifies the arguments:
 
     - 'xopt': n-dimensional vector (optimal point so far).
 
+    - 'fval': m-dimensional vector (function values of the interpolation
+    points).
+
     - 'gopt': n-dimensional vector (gradient of the quadratic model at 
     'xbase + xopt').
 
@@ -214,7 +217,7 @@ The function modifies the arguments:
 
     - 'x': n-dimensional vector.
 
-Returns the index of 'xopt' in the set 'Y'.
+Returns the index of 'xopt' in the set 'Y' and 'countf'.
 
 """
 function construct_initial_set!(
@@ -333,7 +336,7 @@ function construct_initial_set!(
 
     copyto!(xopt, fval[kopt])
 
-    return kopt
+    return kopt, countf
 
 end
 
