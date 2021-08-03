@@ -437,16 +437,20 @@ function print_info(
         println("The maximum number of function evaluations has been reached.")
     elseif flag == -3
         printstyled("Warning: ", bold=true, color=:light_red)
-        println("Calculating the objective function value exceeds the maximum number of function evaluations.")
+        println("The calculated direction is not downhill for the model.")
     elseif flag == -4
         printstyled("Warning: ", bold=true, color=:light_red)
-        println("The calculated direction is not downhill for the model.")
+        println("The predicted reduction became too small.")
     elseif flag == -5
         printstyled("Warning: ", bold=true, color=:light_red)
-        println("The predicted reduction became too small.")
-    elseif flag == -6
-        printstyled("Warning: ", bold=true, color=:light_red)
         println("The model gradient norm in the current point has become too small.")
+    elseif flag == -11
+        printstyled("Notice: ", bold=true, color=:light_yellow)
+        println("Calculating the objective function value exceeds the maximum number of function evaluations.")
+    elseif flag == -12
+        printstyled("Notice: ", bold=true, color=:light_yellow)
+        println("Calculating the objective function value exceeds the maximum number of function evaluations.")
+        println("A better value will be obtained when evaluating the function on 'xopt'.")
     else
         printstyled("Warning: ", bold=true, color=:light_red)
         println("Exit flag not specified.")
