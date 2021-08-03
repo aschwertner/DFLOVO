@@ -247,8 +247,9 @@ function construct_initial_set!(
     fval[1] = fbase
     kopt = 1
     aux = 1.0 / δ ^ 2.0
+    new_countf = countf
 
-    for i = 0:min( m - 1, maxfun )
+    for i = 0:min( m - 1, maxfun - countf )
         j = i - n
         k = i + 1
         if i <= (2 * n)
@@ -284,7 +285,7 @@ function construct_initial_set!(
         if i > 0
             reconstruct_original_point!(k, n, a, b, ao, bo, xbase, Y, x)
             fk = fi_eval(func_list, imin, x)
-            countf += 1
+            new_countf += 1
         end
 
         if fk < fval[kopt]
@@ -336,7 +337,7 @@ function construct_initial_set!(
 
     copyto!(xopt, fval[kopt])
 
-    return kopt, countf
+    return kopt, new_countf
 
 end
 
