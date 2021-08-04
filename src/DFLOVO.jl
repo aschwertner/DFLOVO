@@ -127,19 +127,38 @@ import Base: (*)
             print_info(exit_flag)
 
             # Prints additional information
-            if kbase != kopt
+            if kopt != kbase
                 add_exit_flag = -12
                 print_info(add_exit_flag)
             end
             
-            return xbase, fsave, countit, countf, δ, Δ, it_flag, exit_flag
+            return xbase, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
             
         end
         
+        # Updates 'gopt', if necessary.
+        if kopt != kbase
+            update_gopt!(n, m, r, countf, xopt, hq, pq, Y, gopt)
+        end
 
+        while true
 
+            π = stationarity_measure(n, a, b, xopt, gopt)
 
+            if δ > β * π
+                #------------------------------ Criticality phase ------------------------------
 
+                # Update parameters
+                δ *= τ1
+                ρ = 0.0
+
+            else
+
+            end
+
+            
+
+        end
 
     end
 
