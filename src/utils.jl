@@ -484,10 +484,6 @@ function print_info(
         println("The model gradient norm in the current point has become too small.")
     elseif flag == -11
         printstyled("Notice: ", bold=true, color=:light_yellow)
-        println("Calculating the objective function value exceeds the maximum number of function evaluations.")
-    elseif flag == -12
-        printstyled("Notice: ", bold=true, color=:light_yellow)
-        println("Calculating the objective function value exceeds the maximum number of function evaluations.")
         println("A better value will be obtained when evaluating the function on 'xopt'.")
     else
         printstyled("Warning: ", bold=true, color=:light_red)
