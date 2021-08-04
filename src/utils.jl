@@ -110,7 +110,7 @@ end
 
 Reconstructs the original point given its position 'idx' in the sample set  'Y'.
 
-    - 'idx': index of the funtion in 'func_list'.
+    - 'idx': index of the point in the sample set.
 
     - 'n': dimension of the search space.
 
@@ -335,7 +335,7 @@ function construct_initial_set!(
         end
     end
 
-    copyto!(xopt, fval[kopt])
+    reconstruct_original_point!(kopt, n, a, b, ao, bo, xbase, Y, xopt)
 
     return kopt, new_countf
 
