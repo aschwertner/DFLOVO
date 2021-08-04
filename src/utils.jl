@@ -415,6 +415,44 @@ end
 
 """
 
+    stationarity_measure(n::Int64, a::Vector{Float64}, b::Vector{Float64},
+                            xopt::Vector{Float64}, gopt::Vector{Float64})
+
+Calculates the stationarity measure π_{k} = || P_{Ω}( x_{k} - g_{k} ) - x_{k} ||.
+
+    - 'n': dimension of the search space.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'xopt': n-dimensional vector (optimal point so far).
+
+    - 'gopt': n-dimensional vector (gradient of the quadratic model at 
+    'xbase + xopt').
+
+Returns the stationarity measure.
+
+"""
+function stationarity_measure(
+                                n::Int64,
+                                a::Vector{Float64}, 
+                                b::Vector{Float64},
+                                xopt::Vector{Float64}, 
+                                gopt::Vector{Float64}
+                                )
+
+    aux = 0.0
+    for i = 1:n
+        aux += ( min( max( a[i], xopt[i] - gopt[i] ), b[i] ) - xopt[i] ) ^ 2.0
+    end
+
+    return sqrt(aux)
+
+end
+
+"""
+
     print_info(flag::Int64)
 
 Prints information about the exit flag. 
