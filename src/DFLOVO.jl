@@ -30,7 +30,6 @@ import Base: (*)
                     Γmax::Int64=1,
                     δmin::Float64=1.0e-8,
                     gmin::Float64=1.0e-32,
-                    ρmin::Float64=1.0e-32,
                     β::Float64=1.0,
                     τ1::Float64=0.6,
                     τ2::Float64=1.5,
@@ -168,10 +167,15 @@ import Base: (*)
 
         while true
 
+            δold = δ
+            Δold = Δ
+
             π = stationarity_measure(n, a, b, xopt, gopt)
 
             if δ > β * π
                 #------------------------------ Criticality phase ------------------------------
+
+                it_flag = 1
 
                 # Update parameters
                 δ *= τ1
@@ -179,10 +183,25 @@ import Base: (*)
 
             else
 
+                #------------------------------- Radius updates --------------------------------
+
+                if ρ < η1
+                    δ *= τ1
+                    Δ *= τ1
+                elseif ( ρ > η2 ) && ( norm(d) == Δ )
+                    δ *= τ2
+                    Δ *= τ2
+                end
+
+            end
+
+            # Prints information about the iteration.
+            if verbose
+                print_iteration(countit, countf, it_flag, δold, Δold, fsave)
             end
 
             #------------------------- Verifies output conditions --------------------------
-
+        
             # Verifies if 'δ' is less than or equal to 'δmin'.
             if δ ≤ δmin
                 exit_flag = 1
@@ -202,6 +221,8 @@ import Base: (*)
             end
 
             #----------------- Preparations for starting a new iteration  ------------------
+
+            countit += 1
 
         end
 
