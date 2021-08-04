@@ -29,6 +29,8 @@ import Base: (*)
                     maxfun::Int64=(1000 * (length(func_list) + m)),
                     Γmax::Int64=1,
                     δmin::Float64=1.0e-8,
+                    gmin::Float64=1.0e-32,
+                    ρmin::Float64=1.0e-32,
                     β::Float64=1.0,
                     τ1::Float64=0.6,
                     τ2::Float64=1.5,
@@ -113,7 +115,7 @@ import Base: (*)
         fsave = fbase
 
         # Returns if 'countf' exceeds 'maxfun'.
-        if countf == maxfun
+        if countf ≥ maxfun
 
             it_flag = 0
             exit_flag = -2
@@ -141,6 +143,29 @@ import Base: (*)
             update_gopt!(n, m, r, countf, xopt, hq, pq, Y, gopt)
         end
 
+        if norm(gopt) ≤ gmin
+
+            it_flag = 0
+            exit_flag = -5
+
+            # Prints information about the iteration.
+            if verbose
+                print_iteration(countit, countf, it_flag, δ, Δ, fsave)
+            end
+
+            # Prints information about the exit flag.
+            print_info(exit_flag)
+
+            # Prints additional information
+            if kopt != kbase
+                add_exit_flag = -12
+                print_info(add_exit_flag)
+            end
+            
+            return xbase, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
+            
+        end
+
         while true
 
             π = stationarity_measure(n, a, b, xopt, gopt)
@@ -156,9 +181,42 @@ import Base: (*)
 
             end
 
-            
+            #------------------------- Verifies output conditions --------------------------
+
+            # Verifies if 'δ' is less than or equal to 'δmin'.
+            if δ ≤ δmin
+                exit_flag = 1
+                break
+            end
+
+            # Verifies if 'countit' exceeds 'maxit'.
+            if countit ≥ maxit
+                exit_flag = -1
+                break
+            end
+
+            # Verifies if 'countf' exceeds 'maxfun'.
+            if countf ≥ maxfun
+                exit_flag = -2
+                break
+            end
+
+            #----------------- Preparations for starting a new iteration  ------------------
 
         end
+
+        #---------------------- Preparations to finish execution  ----------------------
+
+        # Prints information about the exit flag.
+        print_info(exit_flag)
+
+        # Prints additional information
+        if kopt != kbase
+            add_exit_flag = -12
+            print_info(add_exit_flag)
+        end
+
+        return x, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
 
     end
 
