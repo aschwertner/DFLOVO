@@ -478,9 +478,6 @@ function print_info(
         println("The calculated direction is not downhill for the model.")
     elseif flag == -4
         printstyled("Warning: ", bold=true, color=:light_red)
-        println("The predicted reduction became too small.")
-    elseif flag == -5
-        printstyled("Warning: ", bold=true, color=:light_red)
         println("The model gradient norm in the current point has become too small.")
     elseif flag == -11
         printstyled("Notice: ", bold=true, color=:light_yellow)
