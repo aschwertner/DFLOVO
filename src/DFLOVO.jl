@@ -129,7 +129,7 @@ import Base: (*)
 
             # Prints additional information
             if kopt != kbase
-                add_exit_flag = -12
+                add_exit_flag = -11
                 print_info(add_exit_flag)
             end
             
@@ -145,7 +145,7 @@ import Base: (*)
         if norm(gopt) ≤ gmin
 
             it_flag = 0
-            exit_flag = -5
+            exit_flag = -4
 
             # Prints information about the iteration.
             if verbose
@@ -157,7 +157,7 @@ import Base: (*)
 
             # Prints additional information
             if kopt != kbase
-                add_exit_flag = -12
+                add_exit_flag = -11
                 print_info(add_exit_flag)
             end
             
