@@ -73,6 +73,7 @@ import Base: (*)
         # Initializes useful variables, vectors, and matrices.
         countit = 0                 # Counts the number of iterations.
         countf = 0                  # Counts the number of 'f_i' function evaluations.
+        Γ = 0                       # Auxiliary counter for Radii adjustments phase.
         xbase = zeros(n)            # Origin of the sample set.
         xopt = zeros(n)             # Point with the smallest objective function value.
         ao = zeros(n)               # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
@@ -183,7 +184,19 @@ import Base: (*)
 
             else
 
-                #------------------------------- Radius updates --------------------------------
+                #------------------------------- Step acceptance -------------------------------
+
+                ### Verificar se a direção é de descida para o modelo.
+
+                ### Calcular ρ.
+
+                if ρ ≥ η
+                    ### Atualizar o ponto e remover o ponto indicado pelo TRSBOX.
+                else
+                    ### Calcular a nova direção via ALTMOV e remover o ponto indicado.
+                end
+
+                #------------------------------- Radii updates ---------------------------------
 
                 if ρ < η1
                     δ *= τ1
@@ -220,8 +233,43 @@ import Base: (*)
                 break
             end
 
-            #----------------- Preparations for starting a new iteration  ------------------
+            #--------------------------- Radii adjustments phase ---------------------------
+            
+            if ρ ≥ η
+                ### Escolha i \in Imnin(x_{k+1})
+                if i != imin
 
+                    imin = i
+
+                    if ρ ≥ η1
+
+                        Γ = 0
+
+                    end
+
+                    if Γ ≤ Γmax
+
+                        # Adjusts the radii to create a new model.
+                        δ = τ3 * δold
+                        Δ = max( τ3 * Δold, Δinit )
+                        Γ += 1
+
+                    end
+                    ### Construir um novo modelo
+
+                else
+                    ### imin não é alterado
+                    ### Atualizar o modelo
+                    ### RESCUE?
+                end
+
+            else
+                ### imin não é alterado
+                ### Atualizar o modelo
+                ### RESCUE?
+            end
+
+            # Increases iteration counter
             countit += 1
 
         end
