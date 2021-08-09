@@ -8,8 +8,7 @@ __precompile__(false)
 module DFLOVO
 
     # Load dependencies
-    using Base: Float64
-import Base: (*)
+
     using LinearAlgebra
     using Printf
 
@@ -78,7 +77,7 @@ import Base: (*)
         xopt = zeros(n)             # Point with the smallest objective function value.
         ao = zeros(n)               # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(n)               # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
-        fval = zeros(n)             # Set of the function values of the interpolation points.
+        fval = zeros(m)             # Set of the function values of the interpolation points.
         gopt = zeros(n)             # Holds the gradient of the quadratic model at 'xbase + xopt'
         hq = zeros(nh)              # Holds the explicit second derivatives of the quadratic model.
         pq = zeros(m)               # Holds parameters of the implicit second derivatives of the quadratic model.
