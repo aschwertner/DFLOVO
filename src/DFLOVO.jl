@@ -149,6 +149,12 @@ module DFLOVO
 
             π = stationarity_measure(n, a, b, xopt, gopt)
 
+            # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'πmin', respectively.
+            if ( δ ≤ δmin ) && ( π ≤ πmin )
+                exit_flag = 1
+                break
+            end
+
             if δ > β * π
                 #------------------------------ Criticality phase ------------------------------
 
@@ -191,12 +197,6 @@ module DFLOVO
 
             #------------------------- Verifies output conditions --------------------------
         
-            # Verifies if 'δ' is less than or equal to 'δmin'.
-            if δ ≤ δmin
-                exit_flag = 1
-                break
-            end
-
             # Verifies if 'countit' exceeds 'maxit'.
             if countit ≥ maxit
                 exit_flag = -1
