@@ -476,9 +476,6 @@ function print_info(
     elseif flag == -3
         printstyled("Warning: ", bold=true, color=:light_red)
         println("The calculated direction is not downhill for the model.")
-    elseif flag == -4
-        printstyled("Warning: ", bold=true, color=:light_red)
-        println("The model gradient norm in the current point has become too small.")
     elseif flag == -11
         printstyled("Notice: ", bold=true, color=:light_yellow)
         println("A better value will be obtained when evaluating the function on 'xopt'.")
