@@ -28,7 +28,7 @@ module DFLOVO
                     maxfun::Int64=(1000 * (length(func_list) + m)),
                     Γmax::Int64=1,
                     δmin::Float64=1.0e-8,
-                    gmin::Float64=1.0e-32,
+                    πmin::Float64=1.0e-8,
                     β::Float64=1.0,
                     τ1::Float64=0.6,
                     τ2::Float64=1.5,
@@ -140,29 +140,6 @@ module DFLOVO
         # Updates 'gopt', if necessary.
         if kopt != kbase
             update_gopt!(n, m, r, countf, xopt, hq, pq, Y, gopt)
-        end
-
-        if norm(gopt) ≤ gmin
-
-            it_flag = 0
-            exit_flag = -4
-
-            # Prints information about the iteration.
-            if verbose
-                print_iteration(countit, countf, it_flag, δ, Δ, fsave)
-            end
-
-            # Prints information about the exit flag.
-            print_info(exit_flag)
-
-            # Prints additional information
-            if kopt != kbase
-                add_exit_flag = -11
-                print_info(add_exit_flag)
-            end
-            
-            return xbase, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
-            
         end
 
         while true
