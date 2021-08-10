@@ -15,6 +15,7 @@ module LOWDER
     # Load code
     include("lovo_utils.jl")
     include("utils.jl")
+    include("linear_models.jl")
 
     function lowder(
                     func_list::Array{Function,1},
