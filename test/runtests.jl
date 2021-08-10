@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 
 # Adds modules
-using DFLOVO
+using LOWDER
 using Test
 using LinearAlgebra
 

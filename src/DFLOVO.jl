@@ -2,10 +2,10 @@
 __precompile__(false)
 
 #-------------------------------------------------------------------------------
-# Main file implementing DFLOVO in Julia
+# Main file implementing LOWDER in Julia
 #-------------------------------------------------------------------------------
 
-module DFLOVO
+module LOWDER
 
     # Load dependencies
 
