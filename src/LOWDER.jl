@@ -16,7 +16,7 @@ module LOWDER
     include("lovo_utils.jl")
     include("utils.jl")
 
-    function dflovo(
+    function lowder(
                     func_list::Array{Function,1},
                     x::Vector{Float64},
                     a::Vector{Float64}, 
