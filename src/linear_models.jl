@@ -4,13 +4,14 @@
 
 struct LinearModel
 
-    imin  :: Int64
-    c     :: Float64
-    g     :: AbstractVector
-    xbase :: AbstractVector
-    fval  :: AbstractVector
-    dst   :: AbstractVector
-    Y     :: AbstractMatrix
+    n     :: Int64              # Model dimension.
+    imin  :: Int64              # index of the funtion in 'func_list'.
+    c     :: Float64            # Constant of the model.
+    g     :: AbstractVector     # Gradient of the model.
+    xbase :: AbstractVector     # Origin of the sample set.
+    fval  :: AbstractVector     # Set of the function values of the interpolation points.
+    dst   :: AbstractVector     # Distances between 'xbase' and other interpolation points.
+    Y     :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
 
 end
 
@@ -21,7 +22,7 @@ function LinearModel(
                         Y::Matrix{Float64})
 
     n = length(xbase)
-    dst = zeros(Float64, n - 1)
+    dst = zeros(Float64, n)
 
     for j =1:n
         for i = 1:n
@@ -34,7 +35,7 @@ function LinearModel(
     g = A \ ( fval[2:end] .- fval[1] )
     c = fval[1] - dot( g, xbase )
 
-    return LinearModel(imin, c, g, xbase, fval, dst, Y)
+    return LinearModel(n, imin, c, g, xbase, fval, dst, Y)
 
 end
 
@@ -52,7 +53,7 @@ function update_model!(
                         )
 
     # Updates Y set.
-    for i = 1:length(model.dst)
+    for i = 1:model.n
         @. model.Y[i, :] -= d
     end
 
@@ -61,7 +62,7 @@ function update_model!(
     model.fval[t + 1] = model.fval[1]
 
     # Updates the distance vector.
-    for i = 1:len(model.dst)
+    for i = 1:model.n
         model.dst[i] = norm(model.Y[i, :])
     end
 
@@ -80,12 +81,10 @@ function model_from_scratch!(
                                 b::Vector{Float64}
                                 )
 
-    n = length(model.dst)
-
     # Sets Y to a empty matrix.
     @. model.Y = 0.0
 
-    for i = 1:n
+    for i = 1:model.n
         
         # Computes the new interpolation points and the distances.
         α = min( b[i] - model.xbase[i], δ )
@@ -113,6 +112,6 @@ function rebuild_model!(
     model.g = model.Y \ ( model.fval[2:end] .- model.fval[1] )
     model.c = model.fval[1] - dot( model.g, model.xbase )
 
-    return LinearModel(model.imin, model.c, model.g, model.xbase, model.fval, model.dst, model.Y )
+    return LinearModel(model.n, model.imin, model.c, model.g, model.xbase, model.fval, model.dst, model.Y )
 
 end
