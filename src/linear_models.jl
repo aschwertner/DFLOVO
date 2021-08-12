@@ -16,15 +16,15 @@ end
 
 function LinearModel(imin, xbase, fval, Y)
 
-    m, n = size(Y)
-    dst = zeros(Float64, m)
+    n = length(xbase)
+    dst = zeros(Float64, n - 1)
 
-    for j =1:n
-        for i = 2:m
-            Y[i, j] -= xbase[j]
-            dst[i - 1] += Y[i, j] ^ 2.0
-        end
-    end
+    #for j =1:n
+    #    for i = 1:n
+    #        Y[i, j] -= xbase[j]
+    #        dst[i - 1] += Y[i, j] ^ 2.0
+    #    end
+    #end
     @. dst = sqrt(dst)
     
     g = A \ ( fval[2:end] .- fval[1] )
@@ -59,6 +59,31 @@ function update!(model::LinearModel, t, fval_d, d)
     # Adds the new center
     model.fval[1] = fval_d
     @. model.xbase += d 
+
+    return rebuild!(model)
+
+end
+
+function fromscratch!(model::LinearModel, func_list, δ, a, b)
+
+    n = length(model.dst)
+
+    # Sets Y to a empty matrix
+    @. model.Y = 0.0
+
+    for i = 1:n
+        
+        # Computes the new interpolation points and the distances
+        α = min( u[i] - model.xbase[i], δ )
+        model.Y[i, i] = α
+        model.dst[i] = α
+
+        # Computes the function values
+        model.xbase[i] += α
+        model.fval[i + 1] = func_list[imin](model.xbase)
+        model.xbase[i] -= α
+
+    end
 
     return rebuild!(model)
 
