@@ -14,17 +14,21 @@ struct LinearModel
 
 end
 
-function LinearModel(imin, xbase, fval, Y)
+function LinearModel(
+                        imin::Int64,
+                        xbase::Vector{Float64},
+                        fval::Vector{Float64},
+                        Y::Matrix{Float64})
 
     n = length(xbase)
     dst = zeros(Float64, n - 1)
 
-    #for j =1:n
-    #    for i = 1:n
-    #        Y[i, j] -= xbase[j]
-    #        dst[i - 1] += Y[i, j] ^ 2.0
-    #    end
-    #end
+    for j =1:n
+        for i = 1:n
+            Y[i, j] -= xbase[j]
+            dst[i] += Y[i, j] ^ 2.0
+        end
+    end
     @. dst = sqrt(dst)
     
     g = A \ ( fval[2:end] .- fval[1] )
@@ -40,7 +44,12 @@ end
 
 ∇2( model::LinearModel )( x::AbstractVector ) = false * I
 
-function update!(model::LinearModel, t, fval_d, d)
+function update_model!(
+                        model::LinearModel, 
+                        t::Int64,
+                        fval_d::Float64,
+                        d::Vector{Float64}
+                        )
 
     # Updates Y set.
     for i = 1:length(model.dst)
@@ -56,42 +65,49 @@ function update!(model::LinearModel, t, fval_d, d)
         model.dst[i] = norm(model.Y[i, :])
     end
 
-    # Adds the new center
+    # Adds the new center.
     model.fval[1] = fval_d
     @. model.xbase += d 
 
-    return rebuild!(model)
+    return rebuild_model!(model)
 
 end
 
-function fromscratch!(model::LinearModel, func_list, δ, a, b)
+function model_from_scratch!(
+                                model::LinearModel,
+                                func_list::Array{Function, 1}, 
+                                δ::Float64,
+                                b::Vector{Float64}
+                                )
 
     n = length(model.dst)
 
-    # Sets Y to a empty matrix
+    # Sets Y to a empty matrix.
     @. model.Y = 0.0
 
     for i = 1:n
         
-        # Computes the new interpolation points and the distances
-        α = min( u[i] - model.xbase[i], δ )
+        # Computes the new interpolation points and the distances.
+        α = min( b[i] - model.xbase[i], δ )
         model.Y[i, i] = α
         model.dst[i] = α
 
-        # Computes the function values
+        # Computes the function values.
         model.xbase[i] += α
         model.fval[i + 1] = func_list[imin](model.xbase)
         model.xbase[i] -= α
 
     end
 
-    return rebuild!(model)
+    return rebuild_model!(model)
 
 end
 
-function rebuild_model!(model::LinearModel)
+function rebuild_model!(
+                        model::LinearModel
+                        )
 
-    # Computes the new c and g
+    # Computes the new c and g.
     # !!! Very inefficient !!!
 
     model.g = model.Y \ ( model.fval[2:end] .- model.fval[1] )
