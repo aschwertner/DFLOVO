@@ -16,21 +16,15 @@ struct LinearModel
 end
 
 function LinearModel(
+                        n::Int64,
                         imin::Int64,
+                        δ::Float64,
                         xbase::Vector{Float64},
                         fval::Vector{Float64},
-                        Y::Matrix{Float64})
+                        Y::Matrix{Float64}
+                        )
 
-    n = length(xbase)
-    dst = zeros(Float64, n)
-
-    for j =1:n
-        for i = 1:n
-            Y[i, j] -= xbase[j]
-            dst[i] += Y[i, j] ^ 2.0
-        end
-    end
-    @. dst = sqrt(dst)
+    dst = δ * ones(Float64, n)
     
     g = A \ ( fval[2:end] .- fval[1] )
     c = fval[1] - dot( g, xbase )
