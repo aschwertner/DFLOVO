@@ -47,7 +47,7 @@ module LOWDER
         r = length(func_list)
 
         # Verify algorithm initialization conditions.
-        m_min = n + 2
+        m_min = n + 1
         m_max = convert(Int64, ( n + 1 ) * ( n + 2 ) / 2)
         @assert m_min ≤ m ≤ m_max "The number of interpolation points 'm' must satisfy m ∈ [$(m_min), $(m_max)]."
         @assert length(a) == n "The vector 'a' must have dimension $(n)."
@@ -68,25 +68,17 @@ module LOWDER
         
         # Sets some useful constants.
         Δinit = Δ
-        nh = convert(Int64, n * ( n + 1 ) / 2)
+        #nh = convert(Int64, n * ( n + 1 ) / 2)
 
         # Initializes useful variables, vectors, and matrices.
         countit = 0                 # Counts the number of iterations.
         countf = 0                  # Counts the number of 'f_i' function evaluations.
         Γ = 0                       # Auxiliary counter for Radii adjustments phase.
         xbase = zeros(n)            # Origin of the sample set.
-        xopt = zeros(n)             # Point with the smallest objective function value.
         ao = zeros(n)               # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(n)               # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
-        fval = zeros(m)             # Set of the function values of the interpolation points.
-        gopt = zeros(n)             # Holds the gradient of the quadratic model at 'xbase + xopt'
-        hq = zeros(nh)              # Holds the explicit second derivatives of the quadratic model.
-        pq = zeros(m)               # Holds parameters of the implicit second derivatives of the quadratic model.
-        Y = zeros(n, m)             # Set of interpolation points, shifted from the center of the sample set 'xbase'.
-                                        # 'Y = [y1 | y2 | y3 | ... | ym]'.
-        BMAT = zeros(m + n, n)      # Holds the elements of 'Ξ', with the exception of its first column, 
-                                        # and the elements of 'Υ', with the exception of its first row and column. 
-        ZMAT = zeros(m, m - n - 1)  # Holds the elements of 'Z', from the factorization 'Ω = ZZ^T'.
+        fval = zeros(n + 1)             # Set of the function values of the interpolation points.
+        Y = zeros(n, n)             # Set of interpolation points, except the origin 'xbase'
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -94,19 +86,18 @@ module LOWDER
         # Modifies 'ao' and 'bo' to store the 'a-xbase' and 'b-xbase' differences, respectively.
         correct_guess_bounds!(n, δ, a, b, x, ao, bo)
 
-        # Saves the origin of the sample set in 'xbase'. Vector 'x' will be used as workspace.
-        copyto!(xbase, x)
-
         # Computes the value of f_min at 'xbase' and an index 'imin' belonging to the set I_min(xbase).
-        fbase, imin = fmin_eval(func_list, r, xbase)
+        fbase, imin = fmin_eval(func_list, r, x)
 
         # Updates de function call counter.
         countf += r
 
-        # Builds the initial sample set 'Y', calculates the respective function values 'fval', updates de function call counter 'countf',
-        # determines the elements of 'gopt', 'hq', 'BMAT', and 'ZMAT', and the point with the smallest function value 'xopt'.
-        # Defines 'kopt' as the position of 'xopt' in set 'Y'.
-        kopt, countf = construct_initial_set!(func_list, n, m, imin, maxfun, fbase, δ, a, b, ao, bo, xbase, countf, xopt, fval, gopt, hq, BMAT, ZMAT, Y, x)
+        # Builds the interpolation set and computes the funtion values.
+        fval[1] = fbase
+        kopt = construct_initial_set_linear!(func_list, n, imin, δ, fbase, x, bo, fval, Y)
+
+        # Updates de function call counter.
+        countf += n - 1
 
         # Defines 'kbase' as the position of 'xbase' in set 'Y', i.e., 'kbase' is set to 1.
         kbase = 1
@@ -134,15 +125,12 @@ module LOWDER
                 print_info(add_exit_flag)
             end
             
-            return xbase, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
+            return x, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
             
         end
-        
-        # Updates 'gopt', if necessary.
-        if kopt != kbase
-            update_gopt!(n, m, r, countf, xopt, hq, pq, Y, gopt)
-        end
 
+        model = LinearModel(n, imin, δ, x, fval, Y)
+        
         while true
 
             δold = δ
