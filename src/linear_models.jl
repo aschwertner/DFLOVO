@@ -88,3 +88,15 @@ function fromscratch!(model::LinearModel, func_list, δ, a, b)
     return rebuild!(model)
 
 end
+
+function rebuild_model!(model::LinearModel)
+
+    # Computes the new c and g
+    # !!! Very inefficient !!!
+
+    model.g = model.Y \ ( model.fval[2:end] .- model.fval[1] )
+    model.c = model.fval[1] - dot( model.g, model.xbase )
+
+    return LinearModel(model.imin, model.c, model.g, model.xbase, model.fval, model.dst, model.Y )
+
+end
