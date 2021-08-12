@@ -14,7 +14,7 @@ struct LinearModel
 
 end
 
-LinearModel(imin, xbase, fval, Y) = begin
+function LinearModel(imin, xbase, fval, Y)
 
     m, n = size(Y)
     dst = zeros(Float64, m)
@@ -27,10 +27,16 @@ LinearModel(imin, xbase, fval, Y) = begin
     end
     @. dst = sqrt(dst)
     
-    g = A \ (fval[2:end] .- fval[1])
-    c = fval[1] - dot(g, xbase)
+    g = A \ ( fval[2:end] .- fval[1] )
+    c = fval[1] - dot( g, xbase )
 
-    LinearModel(imin, c, g, xbase, fval, dst, Y)
+    return LinearModel(imin, c, g, xbase, fval, dst, Y)
 
 end
+
+( model::LinearModel )( x::AbstractVector ) = model.c + dot( model.g, x )
+
+∇( model::LinearModel )( x::AbstractVector ) = model.g
+
+∇2( model::LinearModel )( x::AbstractVector ) = false * I
 
