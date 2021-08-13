@@ -74,19 +74,22 @@ module LOWDER
         countit = 0                 # Counts the number of iterations.
         countf = 0                  # Counts the number of 'f_i' function evaluations.
         Γ = 0                       # Auxiliary counter for Radii adjustments phase.
-        xbase = zeros(n)            # Origin of the sample set.
+        xopt = zeros(n)             # Best point so far.
         ao = zeros(n)               # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(n)               # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
-        fval = zeros(n + 1)             # Set of the function values of the interpolation points.
-        Y = zeros(n, n)             # Set of interpolation points, except the origin 'xbase'
+        d_trs = zeros(n)            # TRSBOX descent direction.
+        d_alt1 = zeros(n)           # ALTMOV descent direction.
+        d_alt2 = zeros(n)           # Cauchy ALTMOV descent direction.
+        fval = zeros(n + 1)         # Set of the function values of the interpolation points.
+        Y = zeros(n, n)             # Set of interpolation points, except the origin 'xbase'.
 
         #-------------------- Preparations for the first iteration ---------------------
 
         # Modifies the initial estimate 'x' to be suitable for building the first model. 
-        # Modifies 'ao' and 'bo' to store the 'a-xbase' and 'b-xbase' differences, respectively.
+        # Modifies 'ao' and 'bo' to store the 'a-x' and 'b-x' differences, respectively.
         correct_guess_bounds!(n, δ, a, b, x, ao, bo)
 
-        # Computes the value of f_min at 'xbase' and an index 'imin' belonging to the set I_min(xbase).
+        # Computes the value of f_min at 'x' and an index 'imin' belonging to the set I_min('x').
         fbase, imin = fmin_eval(func_list, r, x)
 
         # Updates de function call counter.
@@ -94,15 +97,15 @@ module LOWDER
 
         # Builds the interpolation set and computes the funtion values.
         fval[1] = fbase
-        kopt = construct_initial_set_linear!(func_list, n, imin, δ, fbase, x, bo, fval, Y)
+        kopt = construct_initial_set_linear!(func_list, n, imin, δ, fbase, x, bo, xopt, fval, Y)
 
         # Updates de function call counter.
         countf += n - 1
 
-        # Defines 'kbase' as the position of 'xbase' in set 'Y', i.e., 'kbase' is set to 1.
+        # Defines 'kbase' as the position of 'x' in set 'Y', i.e., 'kbase' is set to 1.
         kbase = 1
 
-        # Saves the objective function value at 'xbase' in
+        # Saves the objective function value at 'x' in
         fsave = fbase
 
         # Returns if 'countf' exceeds 'maxfun'.
@@ -129,14 +132,17 @@ module LOWDER
             
         end
 
+        # Constructs the linear Model
         model = LinearModel(n, imin, δ, x, fval, Y)
         
         while true
 
+            # Saves old information
             δold = δ
             Δold = Δ
 
-            π = stationarity_measure(n, a, b, xopt, gopt)
+            # Computes the stationarity measure π = ||P_{Ω}(xopt - g) - xopt||
+            π = stationarity_measure(model, xopt, a, b)
 
             # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'πmin', respectively.
             if ( δ ≤ δmin ) && ( π ≤ πmin )
