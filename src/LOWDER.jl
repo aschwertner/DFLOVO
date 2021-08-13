@@ -28,6 +28,7 @@ module LOWDER
                     m::Int64=(2 * length(x) + 1),
                     maxit::Int64=5000,
                     maxfun::Int64=(1000 * (length(func_list) + m)),
+                    ρmax::Int64,
                     Γmax::Int64=1,
                     δmin::Float64=1.0e-8,
                     πmin::Float64=1.0e-8,
@@ -74,13 +75,13 @@ module LOWDER
         # Initializes useful variables, vectors, and matrices.
         countit = 0                 # Counts the number of iterations.
         countf = 0                  # Counts the number of 'f_i' function evaluations.
+        countρ = 0                  # Counts the number of simplified 'ρ' calculations for which the descent direction was not accepted.
         Γ = 0                       # Auxiliary counter for Radii adjustments phase.
         xopt = zeros(n)             # Best point so far.
         ao = zeros(n)               # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(n)               # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
         d_trs = zeros(n)            # TRSBOX descent direction.
-        d_alt1 = zeros(n)           # ALTMOV descent direction.
-        d_alt2 = zeros(n)           # Cauchy ALTMOV descent direction.
+        d_alt = zeros(n)            # ALTMOV descent direction.
         fval = zeros(n + 1)         # Set of the function values of the interpolation points.
         Y = zeros(n, n)             # Set of interpolation points, except the origin 'xbase'.
 
@@ -164,13 +165,67 @@ module LOWDER
 
                 #------------------------------- Step acceptance -------------------------------
 
-                ### Verificar se a direção é de descida para o modelo.
+                dsc_d, s_cal, idx, ρ, fi_new = relative_reduction(model, func_list, r, kopt, countρ, ρmax, xopt, d_trs, x)
+                
+                if dsc_d
 
-                ### Calcular ρ.
+                    it_flag = 2
+                    exit_flag = -3
+
+                    # Prints information about the iteration.
+                    if verbose
+                        print_iteration(countit, countf, it_flag, δ, Δ, fsave)
+                    end
+
+                    # Prints information about the exit flag.
+                    print_info(exit_flag)
+
+                    # Prints additional information
+                    if kopt != kbase
+                        add_exit_flag = -11
+                        print_info(add_exit_flag)
+                    end
+            
+                    return model.xbase, fsave, model.imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
+
+                end
+
+                if s_cal
+                    countf += 1
+                else
+                    countf += r
+                end
+
+                ### VER
+                if countf ≥ maxfun
+
+                    it_flag = 0
+                    exit_flag = -2
+        
+                    # Prints information about the iteration.
+                    if verbose
+                        print_iteration(countit, countf, it_flag, δ, Δ, fsave)
+                    end
+        
+                    # Prints information about the exit flag.
+                    print_info(exit_flag)
+        
+                    # Prints additional information
+                    if kopt != kbase
+                        add_exit_flag = -11
+                        print_info(add_exit_flag)
+                    end
+                    
+                    return model.xbase, fsave, model.imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
+                    
+                end
 
                 if ρ ≥ η
+                    countρ = 0
+
                     ### Atualizar o ponto e remover o ponto indicado pelo TRSBOX.
                 else
+                    countρ += 1
                     ### Calcular a nova direção via ALTMOV e remover o ponto indicado.
                 end
 
@@ -208,10 +263,34 @@ module LOWDER
             #--------------------------- Radii adjustments phase ---------------------------
             
             if ρ ≥ η
-                ### Escolha i \in Imnin(x_{k+1})
-                if i != imin
+                
+                if s_cal
+                    # Computes fmin(xnew) and an index in Imin(xnew).
+                    fmin_new, imin_new = fmin_partial_eval(func_list, r, idx, fi_new, xnew)
+                    countf += r - 1
+                    if imin_new != model.imin
+                        # Verifies if the index 'model.imin' belongs to the set Imin(xnew).
+                        i_imin = verify_index_imin(func_list, model.imin, fmin_new, xnew)
+                        countf += 1
+                        # If it is true, 'imin_new' is set to 'model.imin'.
+                        if i_imin
+                            imin_new = imin
+                        end
+                    end
+                else
+                    # Verifies if the index 'model.imin' belongs to the set Imin(xnew).
+                    i_imin = verify_index_imin(func_list, model.imin, fi_new, xnew)
 
-                    imin = i
+                    # If it is true, 'imin_new' is set to 'model.imin', otherwise, 'imin_new' is set do idx.
+                    if i_imin
+                        imin_new = model.imin
+                    else
+                        imin_new = idx
+                        fmin_new = fi_new
+                    end
+                end
+
+                if imin_new != model.imin
 
                     if ρ ≥ η1
 
@@ -227,18 +306,24 @@ module LOWDER
                         Γ += 1
 
                     end
-                    ### Construir um novo modelo
+                    
+                    # Constructs a new linear model
+                    model.imin = imin_new
+                    model.fval[1] = fmin_new
+                    model_from_scratch!(model, func_list, δ, b)
 
                 else
-                    ### imin não é alterado
-                    ### Atualizar o modelo
-                    ### RESCUE?
+
+                    # Updates the linear model with TRSBOX information
+                    update_model!( model, t_trs, fi_new, d_trs)
+
                 end
 
             else
-                ### imin não é alterado
-                ### Atualizar o modelo
-                ### RESCUE?
+
+                # Updates the linear model with ALTMOV information
+                update_model!( model, t_alt, fi_new, d_alt)
+
             end
 
             # Increases iteration counter
@@ -257,7 +342,7 @@ module LOWDER
             print_info(add_exit_flag)
         end
 
-        return x, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
+        return model.xbase, fsave, model.imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, model.fval[kopt]
 
     end
 
