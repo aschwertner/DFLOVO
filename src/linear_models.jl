@@ -87,7 +87,7 @@ function model_from_scratch!(
 
         # Computes the function values.
         model.xbase[i] += α
-        model.fval[i + 1] = func_list[imin](model.xbase)
+        model.fval[i + 1] = func_list[model.imin](model.xbase)
         model.xbase[i] -= α
 
     end
