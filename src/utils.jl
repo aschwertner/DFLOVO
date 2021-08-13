@@ -435,16 +435,15 @@ Returns the stationarity measure.
 
 """
 function stationarity_measure(
-                                n::Int64,
+                                model::LinearModel,
+                                xopt::Vector{Float64},
                                 a::Vector{Float64}, 
-                                b::Vector{Float64},
-                                xopt::Vector{Float64}, 
-                                gopt::Vector{Float64}
+                                b::Vector{Float64}
                                 )
 
     aux = 0.0
-    for i = 1:n
-        aux += ( min( max( a[i], xopt[i] - gopt[i] ), b[i] ) - xopt[i] ) ^ 2.0
+    for i = 1:model.n
+        aux += ( min( max( a[i], xopt[i] - model.g[i] ), b[i] ) - xopt[i] ) ^ 2.0
     end
 
     return sqrt(aux)
@@ -544,7 +543,7 @@ end
 # Set of functions useful for the execution of the main algorithm: Linear Models
 #-------------------------------------------------------------------------------
 
-function construct_initial_set_linear!(func_list, n, imin, δ, fbase, xbase, bo, fval, Y)
+function construct_initial_set_linear!(func_list, n, imin, δ, fbase, xbase, bo, xopt, fval, Y)
 
     kopt = 1
     for i = 1:n
@@ -566,6 +565,11 @@ function construct_initial_set_linear!(func_list, n, imin, δ, fbase, xbase, bo,
             kopt = i + 1
         end
 
+    end
+
+    copyto!(xopt, xbase)
+    if kopt != 1
+        xopt[kopt - 1] += Y[kopt - 1, kopt - 1]
     end
 
     return kopt
