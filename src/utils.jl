@@ -450,6 +450,50 @@ function stationarity_measure(
 
 end
 
+function relative_reduction(
+                            model::LinearModel,
+                            func_list::Array{Function,1},
+                            r::Int64,
+                            kopt::Int64,
+                            countρ::Int64,
+                            ρmax::Int64,
+                            xopt::Vector{Float64},
+                            d::Vector{Float64},
+                            xnew::Vector{Float64}
+                            )
+
+    xnew .= xopt .+ d
+    m_d = model( xnew )
+    diff = model.fval[kopt] - m_d
+
+    # Verifies if the direction is downhill for the model.
+    if diff < 0
+
+        return false, false, model.imin, -1.0, -1.0
+
+    else
+        if countρ < ρmax
+
+            fi_d = fi_eval(func_list, model.imin, xnew)
+
+            ρ = ( model.fval[kopt] - fi_d ) / ( diff )
+
+            return true, true, model.imin, ρ, fi_d
+
+        else
+
+            fmin_d, imin_d = fmin_eval(func_list, r, xnew)
+
+            ρ = ( model.fval[kopt] - fmin_d ) / ( diff )
+
+            return true, false, imin_d, ρ, fmin_d
+
+        end
+
+    end
+
+end
+
 """
 
     print_info(flag::Int64)
