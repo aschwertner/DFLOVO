@@ -16,7 +16,6 @@ module LOWDER
     include("lovo_utils.jl")
     include("utils.jl")
     include("linear_models.jl")
-    include("linear_altmov.jl")
 
     function lowder(
                     func_list::Array{Function,1},
