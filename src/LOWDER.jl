@@ -28,7 +28,7 @@ module LOWDER
                     m::Int64=(2 * length(x) + 1),
                     maxit::Int64=5000,
                     maxfun::Int64=(1000 * (length(func_list) + m)),
-                    ρmax::Int64,
+                    ρmax::Int64=3,
                     Γmax::Int64=1,
                     δmin::Float64=1.0e-8,
                     πmin::Float64=1.0e-8,
@@ -310,7 +310,7 @@ module LOWDER
                     # Constructs a new linear model
                     model.imin = imin_new
                     model.fval[1] = fmin_new
-                    model_from_scratch!(model, func_list, δ, b)
+                    model = model_from_scratch!(model, func_list, δ, b)
 
                 else
 
