@@ -48,9 +48,11 @@ module LOWDER
         r = length(func_list)
 
         # Verify algorithm initialization conditions.
-        m_min = n + 1
-        m_max = convert(Int64, ( n + 1 ) * ( n + 2 ) / 2)
-        @assert m_min ≤ m ≤ m_max "The number of interpolation points 'm' must satisfy m ∈ [$(m_min), $(m_max)]."
+        if m != ( n + 1 )
+            m_min = n + 2
+            m_max = convert(Int64, ( n + 1 ) * ( n + 2 ) / 2)
+            @assert m_min ≤ m ≤ m_max "The number of interpolation points 'm' must satisfy m ∈ [$(m_min), $(m_max)] for quadratic models. In the case of linear models, 'm' must be defined as $(n + 1)."
+        end
         @assert length(a) == n "The vector 'a' must have dimension $(n)."
         @assert length(b) == n "The vector 'b' must have dimension $(n)."
         @assert 0.0 < δ ≤ Δ "The radius of the sample set 'δ' must be positive and less or equal to the trust-region radius 'Δ'."
