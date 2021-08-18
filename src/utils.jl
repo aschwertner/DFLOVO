@@ -619,3 +619,24 @@ function construct_initial_set_linear!(func_list, n, imin, δ, fbase, xbase, bo,
     return kopt
 
 end
+
+function projection_active_set!(
+                                v::Vector{Float64}, 
+                                active_idx::Vcetor{Bool}, 
+                                proj_v::Vector{Float64};
+                                sym::Bool=false
+                                )
+
+    for i=1:length(v)
+        if active_idx[i]
+            proj_v[i] = 0.0
+        else
+            if sym
+                proj_v[i] = - v[i]
+            else
+                proj_v[i] = v[i]
+            end
+        end
+    end
+
+end
