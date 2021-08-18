@@ -109,3 +109,19 @@ function rebuild_model!(
     return LinearModel(model.n, model.imin, model.c, model.g, model.xbase, model.fval, model.dst, model.Y )
 
 end
+
+function active_set!(
+                        model::LinearModel,
+                        ao::Vector{Float64},
+                        bo::Vector{Float64},
+                        active_idx::Vector{Bool}
+                        )
+    for i=1:model.n
+        if ( model.xopt[i] == ao[i] && model.g[i] >= 0.0 ) || ( model.xopt[i] == bo[i] && model.g[i] <= 0.0 )
+            active_idx[i] = true
+        else
+            active_idx[i] = false
+        end
+    end
+
+end
