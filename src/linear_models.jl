@@ -5,7 +5,9 @@
 struct LinearModel
 
     n     :: Int64              # Model dimension.
-    imin  :: Int64              # index of the funtion in 'func_list'.
+    m     :: Int64              # Number of interpolation points.
+    imin  :: Int64              # Index of the selected function in 'func_list'.
+    kopt  :: Int64              # Index of the best point so far in 'Y'.
     c     :: Float64            # Constant of the model.
     g     :: AbstractVector     # Gradient of the model.
     xbase :: AbstractVector     # Origin of the sample set.
@@ -117,7 +119,7 @@ function active_set!(
                         active_idx::Vector{Bool}
                         )
     for i=1:model.n
-        if ( model.xopt[i] == ao[i] && model.g[i] >= 0.0 ) || ( model.xopt[i] == bo[i] && model.g[i] <= 0.0 )
+        if ( model.Y[model.kopt, i] == ao[i] && model.g[i] >= 0.0 ) || ( model.Y[model.kopt, i] == bo[i] && model.g[i] <= 0.0 )
             active_idx[i] = true
         else
             active_idx[i] = false
