@@ -127,3 +127,53 @@ function active_set!(
     end
 
 end
+
+function trsbox!(
+                    model::LinearModel,
+                    Δ::Float64,
+                    ao::Vector{Float64},
+                    bo::Vector{Float64},
+                    active_idx::Vector{Bool},
+                    x::Vector{Float64},
+                    d::Vector{Float64}
+                    )
+    
+    # Copies the shifted vector 'xopt' to 'x'.
+    copyto!(x, model.Y[model.kopt, :])
+
+    # Creates the active constraint vector 'active_idx'.
+    active_set!(model, ao, bo, active_idx)
+
+    # Computes the symmetric vector of the projection of the 
+    # gradient of the model by the set of active constraints.
+    projection_active_set!(model.g, active_idx, d, sym = true)
+
+    # If the set of active constraints is not complete,
+    # calculates step 'd' and updates point 'x'.
+    if sum(active_idx) != model.n
+        α = Inf
+        α_B = Inf
+        α_Δ = Δ / norm(d)
+
+        for i=1:model.n
+            if d[i] > 0.0
+                α = ( bo[i] - model.Y[model.kopt, i] ) / d[i]
+            elseif d[i] < 0.0
+                α = ( ao[i] - model.Y[model.kopt, i] ) / d[i]
+            end
+            if α < α_B
+                α_B = α
+            end
+        end
+
+        if α_Δ ≤ α_B
+            @. d *= α_Δ
+        else
+            @. d *= α_B
+        end
+
+        @. x += d
+
+    end
+    
+end
