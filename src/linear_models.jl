@@ -18,9 +18,9 @@ struct LinearModel
 
 end
 
-function create_linear_model(n, m)
+function create_linear_model(n)
 
-    return LinearModel(n, m, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, m), zeros(Float64, m - 1), zeros(Float64, m - 1, n))
+    return LinearModel(n, n + 1, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n, n))
 
 end
 
