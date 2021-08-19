@@ -11,6 +11,7 @@ struct LinearModel
     c     :: Ref{Float64}       # Constant of the model.
     g     :: AbstractVector     # Gradient of the model.
     xbase :: AbstractVector     # Origin of the sample set.
+    xopt  :: AbstractVector     # Best point so far (in terms of function values).
     fval  :: AbstractVector     # Set of the function values of the interpolation points.
     dst   :: AbstractVector     # Distances between 'xbase' and other interpolation points.
     Y     :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
@@ -19,7 +20,7 @@ end
 
 function create_linear_model(n, m)
 
-    return LinearModel(n, m, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, m), zeros(Float64, m - 1), zeros(Float64, m - 1, n))
+    return LinearModel(n, m, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, m), zeros(Float64, m - 1), zeros(Float64, m - 1, n))
 
 end
 
@@ -182,4 +183,4 @@ function trsbox!(
 
     end
     
-# end
+end
