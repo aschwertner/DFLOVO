@@ -15,7 +15,9 @@ module LOWDER
     # Load code
     include("lovo_utils.jl")
     include("utils.jl")
+    include("lowder_types.jl")
     include("linear_models.jl")
+    include("lowder_output.jl")
 
     function lowder(
                     func_list::Array{Function,1},
@@ -71,22 +73,27 @@ module LOWDER
         
         # Sets some useful constants.
         Δinit = Δ
-        #nh = convert(Int64, n * ( n + 1 ) / 2)
 
         # Initializes useful variables, vectors, and matrices.
-        countit = 0                 # Counts the number of iterations.
-        countf = 0                  # Counts the number of 'f_i' function evaluations.
-        countρ = 0                  # Counts the number of simplified 'ρ' calculations for which the descent direction was not accepted.
-        Γ = 0                       # Auxiliary counter for Radii adjustments phase.
-        xopt = zeros(n)             # Best point so far.
-        ao = zeros(n)               # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
-        bo = zeros(n)               # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
-        d_trs = zeros(n)            # TRSBOX descent direction.
-        d_alt = zeros(n)            # ALTMOV descent direction.
-        fval = zeros(n + 1)         # Set of the function values of the interpolation points.
-        Y = zeros(n, n)             # Set of interpolation points, except the origin 'xbase'.
+        nit = 0                     # Counts the number of iterations.
+        nf = 0                      # Counts the number of 'f_i' function evaluations.
+        nρ = 0                      # Auxiliary counter for simplified 'ρ' calculations.
+        nΓ = 0                      # Auxiliary counter for radii adjustments phase.
+        ao = zeros(Float64, n)      # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
+        bo = zeros(Float64, n)      # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
+        d_trs = zeros(Float64, n)   # TRSBOX descent direction.
+        d_alt = zeros(Float64, n)   # ALTMOV direction.
+        active_idx = zeros(Bool, n) # Set of active constraints.
+        imin_set = zeros(Bool, r)   # Set I_{min}(x)
 
         #-------------------- Preparations for the first iteration ---------------------
+
+        # Create an empty structure called 'model', which can hold a linear or quadratic model.
+        if n == (m - 1)
+            model = create_linear_model(n)
+        end
+
+        # Ver daqui para baixo!!!
 
         # Modifies the initial estimate 'x' to be suitable for building the first model. 
         # Modifies 'ao' and 'bo' to store the 'a-x' and 'b-x' differences, respectively.
