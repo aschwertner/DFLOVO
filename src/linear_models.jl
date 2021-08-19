@@ -2,22 +2,6 @@
 # Set of useful functions related to LinearModel struct.
 #-------------------------------------------------------------------------------
 
-struct LinearModel
-
-    n     :: Int64              # Model dimension.
-    m     :: Int64              # Number of interpolation points.
-    imin  :: Ref{Int64}         # Index of the selected function in 'func_list'.
-    kopt  :: Ref{Int64}         # Index of the best point so far in 'Y'.
-    c     :: Ref{Float64}       # Constant of the model.
-    g     :: AbstractVector     # Gradient of the model.
-    xbase :: AbstractVector     # Origin of the sample set.
-    xopt  :: AbstractVector     # Best point so far (in terms of function values).
-    fval  :: AbstractVector     # Set of the function values of the interpolation points.
-    dst   :: AbstractVector     # Distances between 'xbase' and other interpolation points.
-    Y     :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
-
-end
-
 function create_linear_model(n)
 
     return LinearModel(n, n + 1, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n, n))
