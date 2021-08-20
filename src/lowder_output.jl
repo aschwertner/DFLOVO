@@ -1,14 +1,6 @@
-struct LOWDEROutput
-   
-    iter       :: Int64
-    index      :: Int64
-    nf         :: Int64
-    status     :: Int64
-    true_val   :: Bool
-    f          :: Float64
-    solution   :: Vector{Float64}
-
-end
+#-------------------------------------------------------------------------------
+# Set of useful functions related to LOWDEROutput struct.
+#-------------------------------------------------------------------------------
 
 function create_output(
                         model::AbstractModel,
