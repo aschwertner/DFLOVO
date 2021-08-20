@@ -2,6 +2,17 @@
 # Set of useful functions related to LinearModel struct.
 #-------------------------------------------------------------------------------
 
+"""
+
+    create_linear_model(n::Int64)
+
+Creates a empty LinearModel object.
+
+    - 'n': dimension of the search space.
+
+Returns a model of LinearModel type.
+
+"""
 function create_linear_model(
                                 n::Int64
                             )
@@ -10,6 +21,35 @@ function create_linear_model(
 
 end
 
+"""
+
+    construct_model!(func_list::Array{Function, 1}, imin_idx::Int64, 
+                        δ::Float64, fbase::Float64, xbase::Vector{Float64},
+                        ao::Vector{Float64}, bo::Vector{Float64},
+                        model::LinearModel)
+
+Constructs the model based in the given information.
+
+    - 'func_list': list containing the functions that determine the objective
+    function fmin.
+
+    - 'imin_idx': index belonging to the set I_{min}('xbase').
+
+    - 'δ': radius of the sample set.
+
+    - 'fbase': objective function value in 'xbase'.
+
+    - 'xbase': n-dimensional vector (origin of the sample set).
+
+    - 'ao': n-dimensional vector with the shifted lower bounds.
+
+    - 'bo': n-dimensional vector with the shifted upper bounds.
+
+The function modifies the argument:
+
+    - 'model': model of LinearModel type.
+
+"""
 function construct_model!(
                             func_list::Array{Function, 1},
                             imin_idx::Int64, 
@@ -73,21 +113,16 @@ end
 
 """
 
-    stationarity_measure(n::Int64, a::Vector{Float64}, b::Vector{Float64},
-                            xopt::Vector{Float64}, gopt::Vector{Float64})
+    stationarity_measure(model::LinearModel, a::Vector{Float64}, 
+                            b::Vector{Float64})
 
 Calculates the stationarity measure π_{k} = || P_{Ω}( x_{k} - g_{k} ) - x_{k} ||.
 
-    - 'n': dimension of the search space.
+    - 'model': model of LinearModel type. 
 
     - 'a': n-dimensional vector with the lower bounds.
 
     - 'b': n-dimensional vector with the upper bounds.
-
-    - 'xopt': n-dimensional vector (optimal point so far).
-
-    - 'gopt': n-dimensional vector (gradient of the quadratic model at 
-    'xbase + xopt').
 
 Returns the stationarity measure.
 
