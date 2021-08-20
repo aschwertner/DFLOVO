@@ -136,37 +136,3 @@ function fi_eval(
     return func_list[idx](y)
 
 end
-
-"""
-
-    verify_index_imin(func_list::Array{Function, 1}, idx:: Int64, 
-                        fmin_y::Float64, y::Vector{Float64})
-
-Check if 'index' belongs to the set Imin(y).
-
-    - 'func_list': list containing the functions that determine the objective
-    function fmin.
-
-    - 'idx': index of the funtion in 'func_list'.
-
-    - 'fmin_y': objective function value at point 'y'.
-
-    - 'y': n-dimensional vector.
-    
-Returns a Boolean value.
-
-"""
-function verify_index_imin(
-                            func_list::Array{Function, 1}, 
-                            idx:: Int64,
-                            fmin_y::Float64,
-                            y::Vector{Float64}
-                            )
-
-    if func_list[idx](y) > fmin_y
-        return false
-    else
-        return true
-    end
-
-end
