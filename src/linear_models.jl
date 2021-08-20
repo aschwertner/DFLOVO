@@ -2,11 +2,78 @@
 # Set of useful functions related to LinearModel struct.
 #-------------------------------------------------------------------------------
 
-function create_linear_model(n)
+function create_linear_model(
+                                n::Int64
+                            )
 
     return LinearModel(n, n + 1, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n, n))
 
 end
+
+function construct_model!(
+                            func_list::Array{Function, 1},
+                            imin_idx::Int64, 
+                            δ::Float64, 
+                            fbase::Float64,
+                            xbase::Vector{Float64},
+                            ao::Vector{Float64},
+                            bo::Vector{Float64},
+                            model::LinearModel
+                            )
+
+    # Saves information about the index i ∈ I_{min}('xbase') and f_{i}('xbase').
+    model.imin[] = imin_idx
+    model.fval[1] = fbase
+
+    kopt = 1
+    for i = 1:n
+
+        # Saves information about 'model.xbase' and 'model.xopt'.
+        model.xbase[i] = xbase[i]
+        model.xopt[i] = xbase[i]
+
+        # Constructs the set interpolation points 'model.Y', shifted from 'xbase'.
+        if bo[i] == 0.0
+            model.Y[i, i] = - δ
+        else
+            model.Y[i, i] = δ
+        end
+
+        # Saves the distance between the i-th point in 'model.Y' and 'model.xbase'.
+        model.dst[i] = δ
+
+        # Evaluates the function values and saves the information in 'model.fval'.
+        xbase[i] += α
+        model.fval[i + 1] = fi_eval(func_list, imin, xbase)
+        xbase[i] -= α
+
+        # Searches for the least function value to determine 'kopt'.
+        if model.fval[i + 1] < fbase
+            kopt = i + 1
+            fbase = model.fval[i + 1]
+        end
+
+    end
+
+    # Saves the index of the best point in 'model.kopt'
+    model.kopt[] = kopt
+
+    # Reconstructs the best point and saves the information in 'model.xopt'.
+    if kopt != 1
+        model.xopt[kopt - 1] += model.Y[kopt - 1, kopt - 1]
+    end
+
+    # Solves the system to determine the gradient of the linear model 'model.g'
+    model.g = model.Y \ ( model.fval[2:end] .- model.fval[1] )
+
+    # Determines the constant of the linear model 'model.c'
+    model.c[] = model.fval[1] - dot( model.g, model.xbase )
+
+end
+
+
+
+
 
 function LinearModel(
                         n::Int64,
