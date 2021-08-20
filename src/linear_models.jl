@@ -71,25 +71,39 @@ function construct_model!(
 
 end
 
+"""
 
+    stationarity_measure(n::Int64, a::Vector{Float64}, b::Vector{Float64},
+                            xopt::Vector{Float64}, gopt::Vector{Float64})
 
+Calculates the stationarity measure π_{k} = || P_{Ω}( x_{k} - g_{k} ) - x_{k} ||.
 
+    - 'n': dimension of the search space.
 
-function LinearModel(
-                        n::Int64,
-                        imin::Int64,
-                        δ::Float64,
-                        xbase::Vector{Float64},
-                        fval::Vector{Float64},
-                        Y::Matrix{Float64}
-                        )
+    - 'a': n-dimensional vector with the lower bounds.
 
-    dst = δ * ones(Float64, n)
-    
-    g = A \ ( fval[2:end] .- fval[1] )
-    c = fval[1] - dot( g, xbase )
+    - 'b': n-dimensional vector with the upper bounds.
 
-    return LinearModel(n, imin, c, g, xbase, fval, dst, Y)
+    - 'xopt': n-dimensional vector (optimal point so far).
+
+    - 'gopt': n-dimensional vector (gradient of the quadratic model at 
+    'xbase + xopt').
+
+Returns the stationarity measure.
+
+"""
+function stationarity_measure(
+                                model::LinearModel,
+                                a::Vector{Float64}, 
+                                b::Vector{Float64}
+                                )
+
+    aux = 0.0
+    for i = 1:model.n
+        aux += ( min( max( a[i], model.xopt[i] - model.g[i] ), b[i] ) - model.xopt[i] ) ^ 2.0
+    end
+
+    return sqrt(aux)
 
 end
 
