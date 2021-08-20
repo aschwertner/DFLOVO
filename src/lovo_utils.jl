@@ -5,7 +5,7 @@
 """
 
     fmin_eval!(func_list::Array{Function, 1}, r:: Int64, 
-                y::Vector{Float64}, imin_set::Vector{Float64})
+                y::Vector{Float64}, imin_set::Vector{Bool})
 
 Computes the value of the objective function fmin(y) and an index belonging to
 the set I_{min}(y). 
@@ -28,7 +28,7 @@ function fmin_eval(
                     func_list::Array{Function, 1}, 
                     r::Int64,
                     y::Vector{Float64},
-                    imin_set::Vector{Float64}
+                    imin_set::Vector{Bool}
                     )
 
     fmin_y = func_list[1](y)
@@ -55,7 +55,7 @@ end
 """
 
     fmin_partial_eval(func_list::Array{Function, 1}, r:: Int64, idx::Int64,
-                        fi_y::Float64, y::Vector{Float64})
+                        fi_y::Float64, y::Vector{Float64}, imin_set::Vector{Bool})
 
 Computes the value of the objective function fmin(y) and an index belonging to
 the set Imin(y), using the precalculated value of f_idx(y).
@@ -70,6 +70,10 @@ the set Imin(y), using the precalculated value of f_idx(y).
     - 'fi_y': available function value.
 
     - 'y': n-dimensional vector.
+
+The function modifies the argument:
+
+    - 'imin_set': boolean vector with the indexes belonging to the I_{min}(y) set.
     
 Returns the function value 'fmin_y' and the index 'imin_y'.
 
@@ -80,17 +84,24 @@ function fmin_partial_eval(
                     idx::Int64,
                     fi_y::Float64,
                     y::Vector{Float64},
-                    imin_set::Vector{Float64}
+                    imin_set::Vector{Bool}
                     )
 
     fmin_y = fi_y
     imin_y = idx
+    imin_set[idx] = true
     for i = 1:r
         if i != idx
             tmp = func_list[i](y)
             if tmp < fmin_y
                 fmin_y = tmp
                 imin_y = i
+                imin_set[1:(i - 1)] .= false
+                imin_set[i] = true
+            elseif tmp = fmin_y
+                imin_set[i] = true
+            else
+                imin_set[i] = false
             end
         end
     end
