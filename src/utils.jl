@@ -583,43 +583,6 @@ function print_iteration(
 
 end
 
-#-------------------------------------------------------------------------------
-# Set of functions useful for the execution of the main algorithm: Linear Models
-#-------------------------------------------------------------------------------
-
-function construct_initial_set_linear!(func_list, n, imin, δ, fbase, xbase, bo, xopt, fval, Y)
-
-    kopt = 1
-    for i = 1:n
-
-        # Constructs the interpolation points 
-        if bo[i] == 0.0
-            α = - δ
-        else
-            α = δ
-        end
-        Y[i, i] = α
-
-        # Evaluates the function values
-        xbase[i] += α
-        fval[i+1] = fi_eval(func_list, imin, xbase)
-        xbase[i] -= α
-
-        if fval[i + 1] < fbase
-            kopt = i + 1
-        end
-
-    end
-
-    copyto!(xopt, xbase)
-    if kopt != 1
-        xopt[kopt - 1] += Y[kopt - 1, kopt - 1]
-    end
-
-    return kopt
-
-end
-
 function projection_active_set!(
                                 v::Vector{Float64}, 
                                 active_idx::Vcetor{Bool}, 
