@@ -219,17 +219,17 @@ function rebuild_model!(
 
 end
 
-function active_set!(
+function compute_active_set!(
                         model::LinearModel,
                         ao::Vector{Float64},
                         bo::Vector{Float64},
-                        active_idx::Vector{Bool}
+                        active_set::Vector{Bool}
                         )
     for i=1:model.n
         if ( model.Y[model.kopt, i] == ao[i] && model.g[i] >= 0.0 ) || ( model.Y[model.kopt, i] == bo[i] && model.g[i] <= 0.0 )
-            active_idx[i] = true
+            active_set[i] = true
         else
-            active_idx[i] = false
+            active_set[i] = false
         end
     end
 
@@ -240,7 +240,7 @@ function trsbox!(
                     Δ::Float64,
                     ao::Vector{Float64},
                     bo::Vector{Float64},
-                    active_idx::Vector{Bool},
+                    active_set::Vector{Bool},
                     x::Vector{Float64},
                     d::Vector{Float64}
                     )
@@ -248,8 +248,8 @@ function trsbox!(
     # Copies the shifted vector 'xopt' to 'x'.
     copyto!(x, model.Y[model.kopt, :])
 
-    # Creates the active constraint vector 'active_idx'.
-    active_set!(model, ao, bo, active_idx)
+    # Creates the active constraint vector 'active_set'.
+    compute_active_set!(model, ao, bo, active_set)
 
     # Computes the symmetric vector of the projection of the 
     # gradient of the model by the set of active constraints.
@@ -257,16 +257,16 @@ function trsbox!(
 
     # If the set of active constraints is not complete,
     # calculates step 'd' and updates point 'x'.
-    if sum(active_idx) != model.n
+    if sum(active_set) != model.n
         α = Inf
         α_B = Inf
         α_Δ = Δ / norm(d)
 
         for i=1:model.n
             if d[i] > 0.0
-                α = ( bo[i] - model.Y[model.kopt, i] ) / d[i]
+                α = ( bo[i] - model.Y[model.kopt[], i] ) / d[i]
             elseif d[i] < 0.0
-                α = ( ao[i] - model.Y[model.kopt, i] ) / d[i]
+                α = ( ao[i] - model.Y[model.kopt[], i] ) / d[i]
             end
             if α < α_B
                 α_B = α
@@ -283,4 +283,44 @@ function trsbox!(
 
     end
     
+end
+
+function choose_index_trsbox(
+                                model::LinearModel,
+                                Δ::Float64,
+                                xnew::Vector{Float64},
+                                d_base::Vector{Float64},
+                                e_t::Vector{Float64},
+                                sol_t::Vector{Float64}
+                                )
+    
+    d_base .= xnew .- model.xbase
+    e_t .= 0.0
+    qrY = qr(model.Y, Val(true))
+    α = - Inf
+
+    for i=1:model.n
+        if i != model.kopt[]
+            e_t[i] = 1.0
+
+            ldiv!(sol_t, qrY, e_t)
+
+            n2_diff = 0.0
+            for j=1:model.n
+                n2_diff = ( model.Y[t, j] - model.Y[model.kopt[], j] ) ^ 2.0
+            end
+
+            α_t = max( 1.0, n2_diff / Δ ^ 2.0 ) * ( 1.0 + dot(d_base, sol_t) )
+
+            if α_t > α
+                α = α_t
+                t = i
+            end
+
+            e_t[i] = 0.0
+        end
+    end
+
+    return t
+
 end
