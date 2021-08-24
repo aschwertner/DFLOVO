@@ -413,40 +413,31 @@ function update_gopt!(
 
 end
 
-"""
+function relative_reduction(
+                            model::AbstractModel,
+                            func_list::Array{Function, 1},
+                            r::Int64,
+                            diff::Float64,
+                            y::Vector{Float64},
+                            imin_set::Vector{Bool};
+                            full::Bool=false
+                            )
 
-    stationarity_measure(n::Int64, a::Vector{Float64}, b::Vector{Float64},
-                            xopt::Vector{Float64}, gopt::Vector{Float64})
+    if full
 
-Calculates the stationarity measure π_{k} = || P_{Ω}( x_{k} - g_{k} ) - x_{k} ||.
+        fmin_y, idx_y = fmin_eval!(func_list, r, y, imin_set)
+        ρ = ( model.fval[model.kopt[]] - fmin_y ) / ( diff )
 
-    - 'n': dimension of the search space.
+        return ρ, fmin_y, idx_y
 
-    - 'a': n-dimensional vector with the lower bounds.
+    else
 
-    - 'b': n-dimensional vector with the upper bounds.
+        f_y = fi_eval(func_list, model.imin[], y)
+        ρ = ( model.fval[model.kopt[]] - f_y ) / ( diff )
 
-    - 'xopt': n-dimensional vector (optimal point so far).
+        return ρ, f_y, model.imin[]
 
-    - 'gopt': n-dimensional vector (gradient of the quadratic model at 
-    'xbase + xopt').
-
-Returns the stationarity measure.
-
-"""
-function stationarity_measure(
-                                model::LinearModel,
-                                xopt::Vector{Float64},
-                                a::Vector{Float64}, 
-                                b::Vector{Float64}
-                                )
-
-    aux = 0.0
-    for i = 1:model.n
-        aux += ( min( max( a[i], xopt[i] - model.g[i] ), b[i] ) - xopt[i] ) ^ 2.0
     end
-
-    return sqrt(aux)
 
 end
 
@@ -585,13 +576,13 @@ end
 
 function projection_active_set!(
                                 v::Vector{Float64}, 
-                                active_idx::Vcetor{Bool}, 
+                                active_set::Vcetor{Bool}, 
                                 proj_v::Vector{Float64};
                                 sym::Bool=false
                                 )
 
     for i=1:length(v)
-        if active_idx[i]
+        if active_set[i]
             proj_v[i] = 0.0
         else
             if sym
