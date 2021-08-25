@@ -324,3 +324,17 @@ function choose_index_trsbox(
     return t
 
 end
+
+function choose_index_altmov(
+                                model::LinearModel
+                            )
+    
+    ( val, t ) = findmin(model.dst)
+
+    if t == model.kopt[]
+        t = 0
+    end
+
+    return t
+
+end
