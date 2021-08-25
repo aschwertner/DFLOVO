@@ -66,7 +66,7 @@ function construct_model!(
     model.fval[1] = fbase
 
     kopt = 1
-    for i = 1:n
+    for i = 1:model.n
 
         # Saves information about 'model.xbase' and 'model.xopt'.
         model.xbase[i] = xbase[i]
@@ -98,9 +98,16 @@ function construct_model!(
     # Saves the index of the best point in 'model.kopt'
     model.kopt[] = kopt
 
-    # Reconstructs the best point and saves the information in 'model.xopt'.
+    # If the best point is not 'xbase', updates the vector 'xopt' and saves the information in 'model.xopt'.
+    # Also updates the vector of 'model.dst', to store the distance between the interpolation points and 'xopt'.
+    # Note that in the 'kopt' position of the 'model.dst' vector we keep the distance between 'xbase' and 'xopt' points. 
     if kopt != 1
+
         model.xopt[kopt - 1] += model.Y[kopt - 1, kopt - 1]
+
+        @. model.dst *= srqt(2.0)
+        model.dst[kopt] = δ
+
     end
 
     # Solves the system to determine the gradient of the linear model 'model.g'
