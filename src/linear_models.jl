@@ -338,3 +338,31 @@ function choose_index_altmov(
     return t
 
 end
+
+function λ_t(
+                model::LinearModel,
+                index_t::Int64,
+                y::Vector{Float64}
+                qrY::QRPivoted{Float64, Matrix{Float64}}
+                )
+
+    if t == 0
+
+        e = - ones(Float64, model.n)
+        sol = zeros(Float64, model.n)
+        ldiv!(sol, qrY, e)
+
+        return 1.0 + dot(y - model.xbase, sol)
+
+    else
+
+        e_t = zeros(Float64, model.n)
+        e_t[t] = 1.0
+        sol = zeros(Float64, model.n)
+        ldiv!(sol, qrY, e_t)
+
+        return dot(y - model.xbase, sol)
+
+    end
+
+end
