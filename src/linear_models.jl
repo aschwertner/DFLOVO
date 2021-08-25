@@ -295,14 +295,12 @@ end
 function choose_index_trsbox(
                                 model::LinearModel,
                                 Δ::Float64,
-                                xnew::Vector{Float64},
-                                d_base::Vector{Float64},
-                                e_t::Vector{Float64},
-                                sol_t::Vector{Float64}
+                                xnew::Vector{Float64}
                                 )
     
-    d_base .= xnew .- model.xbase
-    e_t .= 0.0
+    d_base = xnew - model.xbase
+    e_t = zeros(model.n)
+    sol_t = zeros(model.n)
     qrY = qr(model.Y, Val(true))
     α = - Inf
 
@@ -312,12 +310,7 @@ function choose_index_trsbox(
 
             ldiv!(sol_t, qrY, e_t)
 
-            n2_diff = 0.0
-            for j=1:model.n
-                n2_diff = ( model.Y[t, j] - model.Y[model.kopt[], j] ) ^ 2.0
-            end
-
-            α_t = max( 1.0, n2_diff / Δ ^ 2.0 ) * ( 1.0 + dot(d_base, sol_t) )
+            α_t = max( 1.0, ( model.dst[i] / Δ ) ^ 2.0 ) * ( 1.0 + dot(d_base, sol_t) )
 
             if α_t > α
                 α = α_t
