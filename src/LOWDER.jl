@@ -75,15 +75,15 @@ module LOWDER
         Δinit = Δ
 
         # Initializes useful variables, vectors, and matrices.
-        nit = 0                     # Counts the number of iterations.
-        nf = 0                      # Counts the number of 'f_i' function evaluations.
         nρ = 0                      # Auxiliary counter for simplified 'ρ' calculations.
         nΓ = 0                      # Auxiliary counter for radii adjustments phase.
+        nit = 0                     # Counts the number of iterations.
+        nf = 0                      # Counts the number of 'f_{i}' function evaluations.
         ao = zeros(Float64, n)      # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(Float64, n)      # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
         d_trs = zeros(Float64, n)   # TRSBOX descent direction.
         d_alt = zeros(Float64, n)   # ALTMOV direction.
-        active_idx = zeros(Bool, n) # Set of active constraints.
+        active_set = zeros(Bool, n) # Set of active constraints.
         imin_set = zeros(Bool, r)   # Set I_{min}(x)
 
         #-------------------- Preparations for the first iteration ---------------------
@@ -93,74 +93,64 @@ module LOWDER
             model = create_linear_model(n)
         end
 
-        # Ver daqui para baixo!!!
-
         # Modifies the initial estimate 'x' to be suitable for building the first model. 
         # Modifies 'ao' and 'bo' to store the 'a-x' and 'b-x' differences, respectively.
         correct_guess_bounds!(n, δ, a, b, x, ao, bo)
 
-        # Computes the value of f_min at 'x' and an index 'imin' belonging to the set I_min('x').
-        fbase, imin = fmin_eval(func_list, r, x)
+        # Computes the value of f_{min}('x') and an index 'imin_idx' ∈ I_{min}('x').
+        fbase, imin_idx = fmin_eval(func_list, r, x, imin_set)
 
         # Updates de function call counter.
-        countf += r
+        nf += r
 
-        # Builds the interpolation set and computes the funtion values.
-        fval[1] = fbase
-        kopt = construct_initial_set_linear!(func_list, n, imin, δ, fbase, x, bo, xopt, fval, Y)
+        # Creates the initial model, modifying the previous 'model' structure.
+        construct_model!(func_list, imin_idx, δ, fbase, xbase, ao, bo, model)
 
         # Updates de function call counter.
-        countf += n - 1
+        nf += n - 1
 
-        # Defines 'kbase' as the position of 'x' in set 'Y', i.e., 'kbase' is set to 1.
-        kbase = 1
-
-        # Saves the objective function value at 'x' in
-        fsave = fbase
-
-        # Returns if 'countf' exceeds 'maxfun'.
-        if countf ≥ maxfun
-
-            it_flag = 0
-            exit_flag = -2
+        # Returns if 'nf' exceeds 'maxfun'.
+        if nf ≥ maxfun
 
             # Prints information about the iteration.
             if verbose
-                print_iteration(countit, countf, it_flag, δ, Δ, fsave)
+                print_iteration(nit, nf, 0, δ, Δ, model.fval[model.kopt[]])
             end
 
             # Prints information about the exit flag.
-            print_info(exit_flag)
-
-            # Prints additional information
-            if kopt != kbase
-                add_exit_flag = -11
-                print_info(add_exit_flag)
+            print_info(-2)
+            if model.kopt[] != 1
+                print_info(-11)
             end
+
+            # Creates and show the LOWDEROutput.
+            output = create_output(model, nit, nf, -2)
+            show_output(output)
             
-            return x, fsave, imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
+            return output
             
         end
-
-        # Constructs the linear Model
-        model = LinearModel(n, imin, δ, x, fval, Y)
         
+        # Main loop
         while true
 
-            # Saves old information
+            # Saves old information about radii
             δold = δ
             Δold = Δ
 
             # Computes the stationarity measure π = ||P_{Ω}(xopt - g) - xopt||
-            π = stationarity_measure(model, xopt, a, b)
+            π = stationarity_measure(model, a, b)
 
             # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'πmin', respectively.
             if ( δ ≤ δmin ) && ( π ≤ πmin )
+
                 exit_flag = 1
                 break
+
             end
 
             if δ > β * π
+
                 #------------------------------ Criticality phase ------------------------------
 
                 it_flag = 1
@@ -171,69 +161,52 @@ module LOWDER
 
             else
 
+                #------------------------------- Step calculation ------------------------------
+
+                trsbox!(model, Δ, ao, bo, active_set, x, d_trs)
+
                 #------------------------------- Step acceptance -------------------------------
 
-                dsc_d, s_cal, idx, ρ, fi_new = relative_reduction(model, func_list, r, kopt, countρ, ρmax, xopt, d_trs, x)
-                
-                if dsc_d
+                mnew = model(x)
+                diff = model.fval[model.kopt[]] - mnew
 
-                    it_flag = 2
-                    exit_flag = -3
-
-                    # Prints information about the iteration.
-                    if verbose
-                        print_iteration(countit, countf, it_flag, δ, Δ, fsave)
-                    end
-
-                    # Prints information about the exit flag.
-                    print_info(exit_flag)
-
-                    # Prints additional information
-                    if kopt != kbase
-                        add_exit_flag = -11
-                        print_info(add_exit_flag)
-                    end
-            
-                    return model.xbase, fsave, model.imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
-
-                end
-
-                if s_cal
-                    countf += 1
-                else
-                    countf += r
-                end
-
-                ### VER
-                if countf ≥ maxfun
+                if diff < 0
 
                     it_flag = 0
-                    exit_flag = -2
-        
-                    # Prints information about the iteration.
-                    if verbose
-                        print_iteration(countit, countf, it_flag, δ, Δ, fsave)
+                    exit_flag = -3
+                    break
+
+                else
+
+                    if nρ < ρmax
+
+                        full_calc = false
+                        ρ, f_y, y_idx = relative_reduction(model, func_list, r, diff, x, imin_set)
+                        nf +=1
+
+                    else
+
+                        full_calc = true
+                        ρ, f_y, y_idx = relative_reduction(model, func_list, r, diff, x, imin_set, full=true)
+                        nf += r - 1
+
                     end
-        
-                    # Prints information about the exit flag.
-                    print_info(exit_flag)
-        
-                    # Prints additional information
-                    if kopt != kbase
-                        add_exit_flag = -11
-                        print_info(add_exit_flag)
-                    end
-                    
-                    return model.xbase, fsave, model.imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, fval[kopt]
-                    
+
                 end
 
+                #dsc_d, s_cal, idx, ρ, fi_new = relative_reduction(model, func_list, r, kopt, countρ, ρmax, xopt, d_trs, x)
+
                 if ρ ≥ η
-                    countρ = 0
+
+                    it_flag = 2
+                    nρ = 0
 
                     ### Atualizar o ponto e remover o ponto indicado pelo TRSBOX.
                 else
-                    countρ += 1
+
+                    it_flag = 0 #Atualizar
+                    nρ += 1
+
                     ### Calcular a nova direção via ALTMOV e remover o ponto indicado.
                 end
 
@@ -257,13 +230,13 @@ module LOWDER
             #------------------------- Verifies output conditions --------------------------
         
             # Verifies if 'countit' exceeds 'maxit'.
-            if countit ≥ maxit
+            if nit ≥ maxit
                 exit_flag = -1
                 break
             end
 
             # Verifies if 'countf' exceeds 'maxfun'.
-            if countf ≥ maxfun
+            if nf ≥ maxfun
                 exit_flag = -2
                 break
             end
