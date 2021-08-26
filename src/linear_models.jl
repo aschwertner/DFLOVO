@@ -329,20 +329,20 @@ function choose_index_altmov(
                                 model::LinearModel
                             )
     
-    ( val, t ) = findmin(model.dst)
+    ( val, idx_t ) = findmin(model.dst)
 
-    if t == model.kopt[]
-        t = 0
+    if idx_t == model.kopt[]
+        idx_t = 0
     end
 
-    return t
+    return idx_t
 
 end
 
-function λ_t(
+function Λ_t(
                 model::LinearModel,
-                index_t::Int64,
-                y::Vector{Float64}
+                idx_t::Int64,
+                y::Vector{Float64},
                 qrY::QRPivoted{Float64, Matrix{Float64}}
                 )
 
@@ -357,12 +357,212 @@ function λ_t(
     else
 
         e_t = zeros(Float64, model.n)
-        e_t[t] = 1.0
+        e_t[idx_t] = 1.0
         sol = zeros(Float64, model.n)
         ldiv!(sol, qrY, e_t)
 
         return dot(y - model.xbase, sol)
 
+    end
+
+end
+
+function altmov!(
+                    model::LinearModel,
+                    idx_t::Int64,
+                    ao::Vector{Float64},
+                    bo::Vector{Float64},
+                    x::Vector{Float64},
+                    d::Vector{Float64}
+                    )
+
+    qrY = qr(model.Y, Val(true))
+    best_abs_ϕ = - 1.0
+
+    # Calculates the "Usual" Alternative Step
+    for j = 1:model.n
+
+        # Uses 'd' as a workspace to save the difference between the 
+        # i-th interpolation point and 'xopt'. In the case where 'i' = 'kopt',
+        # 'd' holds the difference between 'xbase' and 'xopt'. 
+        if j == model.kopt[]
+            @. d = - model.Y[model.kopt, :]
+        else
+            @. d = model.Y[j, :] - model.Y[model.kopt[], :]
+        end
+
+        # Gets the bounds for α_{j} relative to the trust-region.
+        α_upper = Δ / model.dst[j]
+        α_lower = - α_upper
+
+        # Adjusts the bounds to the box constraints.
+        for i = 1:model.n
+            if d[i] > 0.0
+                α_lower = max( α_lower, ( ao[i] - model.xopt[i] ) / d[i] )
+                α_upper = min( α_upper, ( bo[i] - model.xopt[i] ) / d[i] )
+            elseif d[i] < 0.0
+                α_lower = min( α_lower, ( bo[i] - model.xopt[i] ) / d[i] )
+                α_upper = max( α_upper, ( ao[i] - model.xopt[i] ) / d[i] )
+            end
+        end
+
+        # Since the Lagrange polynomial is linear, the optimal α is either lower or upper value.
+        # Uses 'x' as a workspace to hold 'xopt + α * (y_{j} - xopt)'
+        @. x = model.xopt + α_lower * d
+        ϕ_lower = Λ_t(model, idx_t, x, qrY)
+        @. x = model.xopt + α_upper * d
+        ϕ_upper = Λ_t(model, idx_t, x, qrY)
+
+        if abs(ϕ_lower) > abs(ϕ_upper)
+            α_j = α_lower
+            abs_ϕ_j = abs(ϕ_lower)
+        else
+            α_j = α_upper
+            abs_ϕ_j = abs(ϕ_upper)
+        end
+
+        # Compares the best ϕ_j value so far
+        if abs_ϕ_j > best_abs_ϕ
+
+            best_abs_ϕ = abs_ϕ_j
+            best_idx = j
+            best_α
+
+        end
+
+    end
+
+    # Calculates the "Cauchy" Alternative Step
+
+
+
+
+
+end
+
+function altmov_cauchy!(
+                        model::LinearModel,
+                        idx_t::Int64,
+                        Δ::Float64,
+                        ∇Λ_t::Vector{Float64},
+                        ao::Vector{Float64},
+                        bo::Vector{Float64},
+                        s::Vector{Float64},
+                        active_set::Vector{Float64};
+                        sym::Bool=false
+                        )
+
+    z = zeros(Float64, model.n)
+
+    if sym
+        p = 1.0
+    else
+        p = 2.0
+    end
+
+    s .= 0.0
+    for i = 1:model.n
+        if ( (- 1.0) ^ p ) * ∇Λ_t[i] > 0.0
+            s[i] = ao[i] - model.xopt[i]
+        elseif ( (- 1.0) ^ p ) * ∇Λ_t[i] < 0.0
+            s[i] = bo[i] - model.xopt[i]
+        end
+    end
+
+    if norm(s) ≤ Δ
+
+        @. z = model.Y[model.kopt[], :] + s
+
+        if idx_t == 0
+            return abs( 1.0 + dot(z, ∇Λ_t) )
+        else
+            return abs( dot(z, ∇Λ_t) )
+        end
+
+    end
+
+    copyto!(z, s)
+    active_set .= true
+    
+    sum_free = 0.0
+    sum_fixed = 0.0
+    for i = 1:model.n
+
+        if s[i] != 0.0
+
+            sum_free += ∇Λ_t[i] ^ 2.0
+            active_set[i] = false
+
+        end
+
+    end
+
+    if sum_free == 0.0
+
+        s .= 0.0
+        return 0.0
+
+    end
+
+    while true
+
+        num_μ = Δ ^ 2.0 - sum_fixed
+
+        if num_μ > 0.0
+
+            μ = sqrt( num_μ / sum_free )
+
+            stop = true
+            sum_free = 0.0
+            sum_fixed = 0.0
+
+            for i = 1:model.n
+
+                if active_set[i]
+
+                    s[i] = z[i]
+                    sum_fixed += z[i] ^ 2.0
+
+                else
+
+                    s[i] = ( (- 1.0) ^ ( p + 1 ) ) * μ * ∇Λ_t[i]
+
+                    step_i = s[i] + model.xopt[i]
+
+                    if ( step_i < ao[i] ) || ( step_i > bo[i] )
+                    
+                        stop = false
+                        active_set[i] = true
+                        sum_fixed += z[i] ^ 2.0
+
+                    else
+
+                        sum_free += ∇Λ_t[i] ^ 2.0
+
+                    end
+                end
+            end
+
+            if stop || ( sum_free == 0.0 )
+
+                break
+
+            end
+
+        else
+
+            break
+
+        end
+
+    end
+
+    @. z = model.Y[model.kopt[], :] + s
+
+    if idx_t == 0
+        return abs( 1.0 + dot(z, ∇Λ_t) )
+    else
+        return abs( dot(z, ∇Λ_t) )
     end
 
 end
