@@ -445,16 +445,16 @@ end
 
 """
 
-    print_info(flag::Int64)
+    print_warning(flag::Int64)
 
 Prints information about the exit flag. 
 
     - 'flag': exit flag.
 
 """
-function print_info(
-                    flag::Int64
-                    )
+function print_warning(
+                        flag::Int64
+                        )
 
     if flag == 1
         printstyled("Success: ", bold=true, color=:light_green)
@@ -483,7 +483,7 @@ end
     print_iteration(countit::Int64, countf::Int64, flag::Int64, 
                     δ::Float64, Δ::Float64, fsave::Float64)
                             
-Prints information about the iteration status. 
+Prints information about the iteration status.
 
     - 'countit': iteration count.
 
@@ -499,12 +499,14 @@ Prints information about the iteration status.
    
 """
 function print_iteration(
+                            full_calc::Bool,
+                            flag::Int64,
                             countit::Int64,
                             countf::Int64,
-                            flag::Int64,
+                            imin_idx::Int64,
                             δ::Float64,
                             Δ::Float64,
-                            fsave::Float64
+                            fopt::Float64
                             )
         
     if flag == 1
@@ -527,8 +529,49 @@ function print_iteration(
     println("δ          : $(δ)")
     println("Δ          : $(Δ)")
     println("It. type   : $(it_type)")
-    println("Func. val. : $(fsave)")
+    println("I_min index: $(imin_idx)")
+    println("Func. val. : $(fopt)")
+    println("Full ρ     : $(full_calc)")
     println("--------------------------------------------------------------------------------")
+
+end
+
+function print_info(
+                    model::AbstractModel,
+                    output::LOWDEROutput,
+                    full_calc::Bool,
+                    verbose::Int64,
+                    exit_flag::Int64,
+                    it_flag::Int64,
+                    countit::Int64,
+                    countf::Int64,
+                    δ::Float64,
+                    Δ::Float64
+                    )
+    
+    if verbose != 0
+
+        print_iteration( full_calc, it_flag, countit, countf, model.imin[], δ, Δ, model.fval[model.kopt[]] )
+
+        if verbose ≥ 2
+
+            print_warning(exit_flag)
+
+            if model.kopt[] != 1
+
+                print_warning(-11)
+
+            end
+
+            if verbose == 3
+
+                show_output(output)
+
+            end
+
+        end
+
+    end
 
 end
 
