@@ -416,72 +416,30 @@ end
 function relative_reduction(
                             model::AbstractModel,
                             func_list::Array{Function, 1},
-                            r::Int64,
                             diff::Float64,
-                            y::Vector{Float64},
-                            imin_set::Vector{Bool};
-                            full::Bool=false
+                            y::Vector{Float64}
                             )
 
-    if full
+    f_y = fi_eval(func_list, model.imin[], y)
+    ρ = ( model.fval[model.kopt[]] - f_y ) / ( diff )
 
-        fmin_y, idx_y = fmin_eval!(func_list, r, y, imin_set)
-        ρ = ( model.fval[model.kopt[]] - fmin_y ) / ( diff )
-
-        return ρ, fmin_y, idx_y
-
-    else
-
-        f_y = fi_eval(func_list, model.imin[], y)
-        ρ = ( model.fval[model.kopt[]] - f_y ) / ( diff )
-
-        return ρ, f_y, model.imin[]
-
-    end
+    return ρ, f_y, model.imin[]
 
 end
 
-function relative_reduction(
-                            model::LinearModel,
-                            func_list::Array{Function,1},
+function relative_reduction!(
+                            model::AbstractModel,
+                            func_list::Array{Function, 1},
                             r::Int64,
-                            kopt::Int64,
-                            countρ::Int64,
-                            ρmax::Int64,
-                            xopt::Vector{Float64},
-                            d::Vector{Float64},
-                            xnew::Vector{Float64}
+                            diff::Float64,
+                            y::Vector{Float64},
+                            imin_set::Vector{Bool}
                             )
 
-    xnew .= xopt .+ d
-    m_d = model( xnew )
-    diff = model.fval[kopt] - m_d
+    fmin_y, idx_y = fmin_eval!(func_list, r, y, imin_set)
+    ρ = ( model.fval[model.kopt[]] - fmin_y ) / ( diff )
 
-    # Verifies if the direction is downhill for the model.
-    if diff < 0
-
-        return false, false, model.imin, -1.0, -1.0
-
-    else
-        if countρ < ρmax
-
-            fi_d = fi_eval(func_list, model.imin, xnew)
-
-            ρ = ( model.fval[kopt] - fi_d ) / ( diff )
-
-            return true, true, model.imin, ρ, fi_d
-
-        else
-
-            fmin_d, imin_d = fmin_eval(func_list, r, xnew)
-
-            ρ = ( model.fval[kopt] - fmin_d ) / ( diff )
-
-            return true, false, imin_d, ρ, fmin_d
-
-        end
-
-    end
+    return ρ, fmin_y, idx_y
 
 end
 
