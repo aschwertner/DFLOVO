@@ -469,6 +469,8 @@ function altmov!(
 
     end
 
+    return idx
+
 end
 
 function altmov_cauchy!(
