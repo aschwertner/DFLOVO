@@ -24,7 +24,7 @@ The function modifies the argument:
 Returns the function value 'fmin_y' and the index 'imin_y'.
 
 """
-function fmin_eval(
+function fmin_eval!(
                     func_list::Array{Function, 1}, 
                     r::Int64,
                     y::Vector{Float64},
@@ -54,7 +54,7 @@ end
 
 """
 
-    fmin_partial_eval(func_list::Array{Function, 1}, r:: Int64, idx::Int64,
+    fmin_partial_eval!(func_list::Array{Function, 1}, r:: Int64, idx::Int64,
                         fi_y::Float64, y::Vector{Float64}, imin_set::Vector{Bool})
 
 Computes the value of the objective function fmin(y) and an index belonging to
@@ -78,7 +78,7 @@ The function modifies the argument:
 Returns the function value 'fmin_y' and the index 'imin_y'.
 
 """
-function fmin_partial_eval(
+function fmin_partial_eval!(
                     func_list::Array{Function, 1}, 
                     r::Int64,
                     idx::Int64,
