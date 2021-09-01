@@ -346,7 +346,7 @@ function Λ_t(
                 qrY::QRPivoted{Float64, Matrix{Float64}}
                 )
 
-    if t == 0
+    if idx_t == 0
 
         e = - ones(Float64, model.n)
         sol = zeros(Float64, model.n)
@@ -373,7 +373,8 @@ function altmov!(
                     ao::Vector{Float64},
                     bo::Vector{Float64},
                     x::Vector{Float64},
-                    d::Vector{Float64}
+                    d::Vector{Float64},
+                    altmov_set::Vector{Bool}
                     )
 
     qrY = qr(model.Y, Val(true))
@@ -434,9 +435,39 @@ function altmov!(
 
     # Calculates the "Cauchy" Alternative Step
 
+    if idx_t == 0
 
+        e = - ones(Float64, model.n)
+        ∇Λ_t = zeros(Float64, model.n)
+        ldiv!(∇Λ_t, qrY, e)
 
+    else
 
+        e_t = zeros(Float64, model.n)
+        e_t[idx_t] = 1.0
+        ∇Λ_t = zeros(Float64, model.n)
+        ldiv!(∇Λ_t, qrY, e_t)
+
+    end
+
+    Λ_1 = altmov_cauchy!(model, idx_t, Δ, ∇Λ_t, ao, bo, d, altmov_set)
+    Λ_2 = altmov_cauchy!(model, idx_t, Δ, ∇Λ_t, ao, bo, x, altmov_set, sym = true)
+
+    ( val, idx ) = findmax( [ best_abs_ϕ, Λ_1, Λ_2 ] )
+
+    if idx == 1
+
+        @. x = model.xopt + best_α * ( model.Y[ best_idx, : ] - model.Y[ model.kopt[], : ] )
+
+    elseif idx == 2
+
+        @. x = model.Y[ model.kopt[], :] + d
+
+    else
+
+        @. x += model.Y[ model.kopt[], : ]
+
+    end
 
 end
 
@@ -460,16 +491,20 @@ function altmov_cauchy!(
         p = 2.0
     end
 
-    s .= 0.0
+    norm2_s = 0.0
     for i = 1:model.n
         if ( (- 1.0) ^ p ) * ∇Λ_t[i] > 0.0
             s[i] = ao[i] - model.xopt[i]
+            norm2_s += s[i] ^ 2.0
         elseif ( (- 1.0) ^ p ) * ∇Λ_t[i] < 0.0
             s[i] = bo[i] - model.xopt[i]
+            norm2_s += s[i] ^ 2.0
+        else
+            s[i] == 0.0
         end
     end
 
-    if norm(s) ≤ Δ
+    if norm2_s ≤ ( Δ ^ 2.0 )
 
         @. z = model.Y[model.kopt[], :] + s
 
@@ -481,8 +516,8 @@ function altmov_cauchy!(
 
     end
 
+    # Saves a copy of 's' in 'z'.
     copyto!(z, s)
-    active_set .= true
     
     sum_free = 0.0
     sum_fixed = 0.0
@@ -492,6 +527,10 @@ function altmov_cauchy!(
 
             sum_free += ∇Λ_t[i] ^ 2.0
             active_set[i] = false
+
+        else
+
+            active_set[i] = true
 
         end
 
@@ -560,9 +599,13 @@ function altmov_cauchy!(
     @. z = model.Y[model.kopt[], :] + s
 
     if idx_t == 0
+
         return abs( 1.0 + dot(z, ∇Λ_t) )
+
     else
+
         return abs( dot(z, ∇Λ_t) )
+
     end
 
 end
