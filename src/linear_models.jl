@@ -84,13 +84,13 @@ function construct_model!(
 
         # Evaluates the function values and saves the information in 'model.fval'.
         xbase[i] += α
-        model.fval[i + 1] = fi_eval(func_list, imin, xbase)
+        model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
         xbase[i] -= α
 
         # Searches for the least function value to determine 'kopt'.
         if model.fval[i + 1] < fbase
             kopt = i + 1
-            fbase = model.fval[i + 1]
+            fbase = model.fval[kopt]
         end
 
     end
@@ -110,11 +110,8 @@ function construct_model!(
 
     end
 
-    # Solves the system to determine the gradient of the linear model 'model.g'
-    model.g = model.Y \ ( model.fval[2:end] .- model.fval[1] )
-
-    # Determines the constant of the linear model 'model.c'
-    model.c[] = model.fval[1] - dot( model.g, model.xbase )
+    # Computes the gradient and the constant of the linear model.
+    rebuild_model!(model)
 
 end
 
@@ -151,10 +148,6 @@ end
 
 ( model::LinearModel )( x::AbstractVector ) = model.c + dot( model.g, x )
 
-∇( model::LinearModel )( x::AbstractVector ) = model.g
-
-∇2( model::LinearModel )( x::AbstractVector ) = false * I
-
 function update_model!(
                         model::LinearModel, 
                         t::Int64,
@@ -184,31 +177,84 @@ function update_model!(
 
 end
 
-function model_from_scratch!(
-                                model::LinearModel,
-                                func_list::Array{Function, 1}, 
-                                δ::Float64,
-                                b::Vector{Float64}
-                                )
+function construct_new_model!(
+                            func_list::Array{Function, 1},
+                            imin_idx::Int64, 
+                            δ::Float64, 
+                            fbase::Float64,
+                            xbase::Vector{Float64},
+                            a::Vector{Float64},
+                            b::Vector{Float64},
+                            ao::Vector{Float64},
+                            bo::Vector{Float64},
+                            model::LinearModel
+                            )
 
     # Sets Y to a empty matrix.
     @. model.Y = 0.0
 
-    for i = 1:model.n
-        
-        # Computes the new interpolation points and the distances.
-        α = min( b[i] - model.xbase[i], δ )
-        model.Y[i, i] = α
-        model.dst[i] = α
+    # Saves information about the index i ∈ I_{min}('xbase') and f_{i}('xbase').
+    model.imin[] = imin_idx
+    model.fval[1] = fbase
 
-        # Computes the function values.
-        model.xbase[i] += α
-        model.fval[i + 1] = func_list[model.imin](model.xbase)
-        model.xbase[i] -= α
+    kopt = 1
+    for i = 1:model.n
+
+        # Saves information about 'model.xbase' and 'model.xopt'.
+        model.xbase[i] = xbase[i]
+        model.xopt[i] = xbase[i]
+
+        # Computes the new relative bounds 'ao' and 'bo'.
+        ao[i] = a[i] - xbase[i]
+        bo[i] = b[i] - xbase[i]
+
+        # Computes the new interpolation points 'model.Y', shifted from 'xbase'.
+        # Evaluates the function values and saves the information in 'model.fval'.
+        if bo[i] > δ
+
+            model.Y[i, i] += δ
+
+            xbase[i] += δ
+            model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
+            xbase[i] -= δ
+
+        else
+            model.Y[i, i] -= δ
+
+            xbase[i] -= δ
+            model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
+            xbase[i] += δ
+
+        end
+
+        # Saves the distance between the i-th point in 'model.Y' and 'model.xbase'.
+        model.dst[i] = δ
+
+        # Searches for the least function value to determine 'kopt'.
+        if model.fval[i + 1] < fbase
+            kopt = i + 1
+            fbase = model.fval[kopt]
+        end
 
     end
 
-    return rebuild_model!(model)
+    # Saves the index of the best point in 'model.kopt'
+    model.kopt[] = kopt
+
+    # If the best point is not 'xbase', updates the vector 'xopt' and saves the information in 'model.xopt'.
+    # Also updates the vector of 'model.dst', to store the distance between the interpolation points and 'xopt'.
+    # Note that in the 'kopt' position of the 'model.dst' vector we keep the distance between 'xbase' and 'xopt' points. 
+    if kopt != 1
+
+        model.xopt[kopt - 1] += model.Y[kopt - 1, kopt - 1]
+
+        @. model.dst *= srqt(2.0)
+        model.dst[kopt] = δ
+
+    end
+
+    # Computes the gradient and the constant of the linear model.
+    rebuild_model!(model)
 
 end
 
@@ -216,13 +262,11 @@ function rebuild_model!(
                         model::LinearModel
                         )
 
-    # Computes the new c and g.
-    # !!! Very inefficient !!!
-
+    # Solves the system to determine the gradient of the linear model 'model.g'
     model.g = model.Y \ ( model.fval[2:end] .- model.fval[1] )
-    model.c = model.fval[1] - dot( model.g, model.xbase )
 
-    return LinearModel(model.n, model.imin, model.c, model.g, model.xbase, model.fval, model.dst, model.Y )
+    # Determines the constant of the linear model 'model.c'
+    model.c[] = model.fval[1] - dot( model.g, model.xbase )
 
 end
 
@@ -457,7 +501,10 @@ function altmov!(
 
     if idx == 1
 
-        @. x = model.xopt + best_α * ( model.Y[ best_idx, : ] - model.Y[ model.kopt[], : ] )
+        @. d = best_α * ( model.Y[ best_idx, : ] - model.Y[ model.kopt[], : ] )
+        @. x = model.xopt + d
+
+        return true
 
     elseif idx == 2
 
@@ -465,11 +512,12 @@ function altmov!(
 
     else
 
+        @. d = x
         @. x += model.Y[ model.kopt[], : ]
 
     end
 
-    return idx
+    return false
 
 end
 
