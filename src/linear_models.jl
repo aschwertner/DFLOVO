@@ -159,7 +159,6 @@ function update_model!(
                         t::Int64,
                         fnew::Float64,
                         xnew::Vector{Float64},
-                        d::Vector{Float64},
                         model::LinearModel;
                         trsbox_step::Bool=false
                         )
