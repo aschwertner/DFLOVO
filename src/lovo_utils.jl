@@ -41,7 +41,7 @@ function fmin_eval!(
             imin_y = i
             imin_set[1:(i - 1)] .= false
             imin_set[i] = true
-        elseif tmp = fmin_y
+        elseif tmp == fmin_y
             imin_set[i] = true
         else
             imin_set[i] = false
@@ -98,7 +98,7 @@ function fmin_partial_eval!(
                 imin_y = i
                 imin_set[1:(i - 1)] .= false
                 imin_set[i] = true
-            elseif tmp = fmin_y
+            elseif tmp == fmin_y
                 imin_set[i] = true
             else
                 imin_set[i] = false
