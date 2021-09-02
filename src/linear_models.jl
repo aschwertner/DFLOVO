@@ -66,6 +66,7 @@ function construct_model!(
     model.fval[1] = fbase
 
     kopt = 1
+
     for i = 1:model.n
 
         # Saves information about 'model.xbase' and 'model.xopt'.
@@ -74,9 +75,13 @@ function construct_model!(
 
         # Constructs the set interpolation points 'model.Y', shifted from 'xbase'.
         if bo[i] == 0.0
+
             model.Y[i, i] = - δ
+
         else
+
             model.Y[i, i] = δ
+
         end
 
         # Saves the distance between the i-th point in 'model.Y' and 'model.xbase'.
@@ -89,8 +94,10 @@ function construct_model!(
 
         # Searches for the least function value to determine 'kopt'.
         if model.fval[i + 1] < fbase
+
             kopt = i + 1
             fbase = model.fval[kopt]
+
         end
 
     end
@@ -149,31 +156,97 @@ end
 ( model::LinearModel )( x::AbstractVector ) = model.c + dot( model.g, x )
 
 function update_model!(
-                        model::LinearModel, 
                         t::Int64,
-                        fval_d::Float64,
-                        d::Vector{Float64}
+                        fnew::Float64,
+                        xnew::Vector{Float64},
+                        d::Vector{Float64},
+                        model::LinearModel;
+                        trsbox_step::Bool=false
                         )
 
-    # Updates Y set.
-    for i = 1:model.n
-        @. model.Y[i, :] -= d
+    if trsbox_step
+
+        model.kopt[] = t + 1
+        model.fval[t + 1] = fnew
+
+        for i=1:model.n
+
+            model.Y[t, i] = xnew[i] - model.xbase[i]
+            model.xopt[i] = xnew[i]
+
+        end
+
+        model.dst[t] = norm( model.Y[t, :] )
+        rebuild_model!(model)
+
+    else
+
+        if t == 0
+
+            if model.fval[ model.kopt[] ] ≤ fnew
+
+                model.fval[1] = model.fval[ model.kopt[] ]
+                model.fval[ model.kopt[] ] = fnew
+                model.kopt[] = 1
+
+                for i=1:model.n
+
+                    @. model.Y[i, :] += model.xbase - model.xopt
+
+                end
+
+                for i=1:model.n
+
+                    model.xbase[i] = model.xopt[i]
+                    model.dst[i] = norm( model.Y[i, :] )
+
+                end
+
+                rebuild_model!(model)
+
+            else
+
+                model.fval[1] = fnew
+                model.kopt[] = 1
+
+                for i=1:model.n
+
+                    @. model.Y[i, :] += model.xbase - xnew
+
+                end
+
+                for i=1:model.n
+
+                    model.xbase[i] = xnew[i]
+                    model.xopt[i] = xnew[i]
+                    model.dst[i] = norm( model.Y[i, :] )
+
+                end
+                
+                rebuild_model!(model)
+
+            end
+
+        else
+
+            model.fval[ t + 1 ] = fnew
+            @. model.Y[t, :] = xnew - model.xbase
+            model.dst[t] = norm( model.Y[t, :] )
+
+            if model.fval[ model.kopt[] ] ≤ fnew
+
+                model.kopt[] = t + 1
+                for i=1:model.n
+                    model.xopt[i] = xnew[i]
+                end
+
+            end
+
+            rebuild_model!(model)
+
+        end
+
     end
-
-    # Puts the old xbase in the t-th vector in Y.
-    @. model.Y[t, :] =  - d
-    model.fval[t + 1] = model.fval[1]
-
-    # Updates the distance vector.
-    for i = 1:model.n
-        model.dst[i] = norm(model.Y[i, :])
-    end
-
-    # Adds the new center.
-    model.fval[1] = fval_d
-    @. model.xbase += d 
-
-    return rebuild_model!(model)
 
 end
 
@@ -198,6 +271,7 @@ function construct_new_model!(
     model.fval[1] = fbase
 
     kopt = 1
+
     for i = 1:model.n
 
         # Saves information about 'model.xbase' and 'model.xopt'.
@@ -219,6 +293,7 @@ function construct_new_model!(
             xbase[i] -= δ
 
         else
+
             model.Y[i, i] -= δ
 
             xbase[i] -= δ
@@ -232,8 +307,10 @@ function construct_new_model!(
 
         # Searches for the least function value to determine 'kopt'.
         if model.fval[i + 1] < fbase
+
             kopt = i + 1
             fbase = model.fval[kopt]
+
         end
 
     end
