@@ -6,11 +6,12 @@ function create_output(
                         model::AbstractModel,
                         nit::Int64,
                         nf::Int64,
-                        exit_flag::Int64
+                        exit_flag::Int64,
+                        full_calc::Bool
                         )
 
-    if model.kopt[] == 1
-        return LOWDEROutput(nit, model.imin[], nf, exit_flag, true, model.fval[1], model.xbase)
+    if ( model.kopt[] == 1 ) || ( full_calc )
+        return LOWDEROutput(nit, model.imin[], nf, exit_flag, true, model.fval[1], model.xopt)
     else
         return LOWDEROutput(nit, model.imin[], nf, exit_flag, false, model.fval[model.kopt[]], model.xopt)
     end
