@@ -85,6 +85,7 @@ module LOWDER
         d = zeros(Float64, n)       # TRSBOX or ALTMOV direction.
         active_set = zeros(Bool, n) # Set of active constraints.
         imin_set = zeros(Bool, r)   # Set I_{min}(x)
+        full_calc = false
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -113,7 +114,7 @@ module LOWDER
         if nf ≥ maxfun
 
             # Creates the LOWDEROutput.
-            output = create_output(model, nit, nf, -2)
+            output = create_output(model, nit, nf, -2, full_calc)
 
             # Prints information about the iteration, exit flag and LOWDEROutput.
             print_info(model, output, false, verbose, -2, 0, nit, nf, δ, Δ)
@@ -161,6 +162,7 @@ module LOWDER
 
                 mnew = model(x)
                 diff = model.fval[model.kopt[]] - mnew
+                full_calc = false
 
                 if diff < 0
 
@@ -172,7 +174,6 @@ module LOWDER
 
                     if nρ < nρmax
 
-                        full_calc = false
                         ρ, fi_x, x_idx = relative_reduction(model, func_list, diff, x)
                         nf +=1
 
@@ -315,16 +316,20 @@ module LOWDER
 
         #---------------------- Preparations to finish execution  ----------------------
 
-        # Prints information about the exit flag.
-        print_info(exit_flag)
+        if fi_x < model.fval[ model.kopt[] ]
 
-        # Prints additional information
-        if kopt != kbase
-            add_exit_flag = -12
-            print_info(add_exit_flag)
+            @. model.xopt = x
+            model.fval[ model.kopt[] ] = fi_x
+
         end
+        
+        # Creates the LOWDEROutput.
+        output = create_output(model, nit, nf, exit_flag, full_calc)
 
-        return model.xbase, fsave, model.imin, countit, countf, δ, Δ, it_flag, exit_flag, xopt, model.fval[kopt]
+        # Prints information about the iteration, exit flag and LOWDEROutput.
+        print_info(model, output, false, verbose, exit_flag, it_flag, nit, nf, δ, Δ)
+        
+        return output
 
     end
 
