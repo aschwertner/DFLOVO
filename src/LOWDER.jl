@@ -29,8 +29,9 @@ module LOWDER
                     m::Int64=(2 * length(x) + 1),
                     maxit::Int64=5000,
                     maxfun::Int64=(1000 * (length(func_list) + m)),
-                    ρmax::Int64=3,
+                    nρmax::Int64=3,
                     Γmax::Int64=1,
+                    verbose::Int64=0,
                     δmin::Float64=1.0e-8,
                     πmin::Float64=1.0e-8,
                     β::Float64=1.0,
@@ -39,8 +40,7 @@ module LOWDER
                     τ3::Float64=2.0,
                     η::Float64=0.1,
                     η1::Float64=0.3,
-                    η2::Float64=0.6,
-                    verbose::Bool=true
+                    η2::Float64=0.6
                     )
 
         # Calculates the search space dimension.
@@ -70,6 +70,7 @@ module LOWDER
         @assert 0.0 < η1 < 1.0 "The parameter 'η1' must be positive and less than one."
         @assert 0 ≤ η < η1 "The parameter 'η' must be nonnegative and less than 'η1'."
         @assert η1 ≤ η2 "The parameter 'η2' must be greater than or equal to 'η1'."
+        @assert 0 ≤ verbose ≤ 3 "The parameter 'verbose' must be 0, 1, 2 or 3."
         
         # Sets some useful constants.
         Δinit = Δ
@@ -81,8 +82,7 @@ module LOWDER
         nf = 0                      # Counts the number of 'f_{i}' function evaluations.
         ao = zeros(Float64, n)      # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(Float64, n)      # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
-        d_trs = zeros(Float64, n)   # TRSBOX descent direction.
-        d_alt = zeros(Float64, n)   # ALTMOV direction.
+        d = zeros(Float64, n)       # TRSBOX or ALTMOV direction.
         active_set = zeros(Bool, n) # Set of active constraints.
         imin_set = zeros(Bool, r)   # Set I_{min}(x)
 
@@ -98,7 +98,7 @@ module LOWDER
         correct_guess_bounds!(n, δ, a, b, x, ao, bo)
 
         # Computes the value of f_{min}('x') and an index 'imin_idx' ∈ I_{min}('x').
-        fbase, imin_idx = fmin_eval(func_list, r, x, imin_set)
+        fbase, imin_idx = fmin_eval!(func_list, r, x, imin_set)
 
         # Updates de function call counter.
         nf += r
@@ -112,20 +112,11 @@ module LOWDER
         # Returns if 'nf' exceeds 'maxfun'.
         if nf ≥ maxfun
 
-            # Prints information about the iteration.
-            if verbose
-                print_iteration(nit, nf, 0, δ, Δ, model.fval[model.kopt[]])
-            end
-
-            # Prints information about the exit flag.
-            print_info(-2)
-            if model.kopt[] != 1
-                print_info(-11)
-            end
-
-            # Creates and show the LOWDEROutput.
+            # Creates the LOWDEROutput.
             output = create_output(model, nit, nf, -2)
-            show_output(output)
+
+            # Prints information about the iteration, exit flag and LOWDEROutput.
+            print_info(model, output, false, verbose, -2, 0, nit, nf, δ, Δ)
             
             return output
             
@@ -153,6 +144,7 @@ module LOWDER
 
                 #------------------------------ Criticality phase ------------------------------
 
+                # Sets iteration flag
                 it_flag = 1
 
                 # Update parameters
@@ -163,7 +155,7 @@ module LOWDER
 
                 #------------------------------- Step calculation ------------------------------
 
-                trsbox!(model, Δ, ao, bo, active_set, x, d_trs)
+                trsbox!(model, Δ, ao, bo, active_set, x, d)
 
                 #------------------------------- Step acceptance -------------------------------
 
@@ -178,137 +170,146 @@ module LOWDER
 
                 else
 
-                    if nρ < ρmax
+                    if nρ < nρmax
 
                         full_calc = false
-                        ρ, f_y, y_idx = relative_reduction(model, func_list, r, diff, x, imin_set)
+                        ρ, fi_x, x_idx = relative_reduction(model, func_list, diff, x)
                         nf +=1
 
                     else
 
                         full_calc = true
-                        ρ, f_y, y_idx = relative_reduction(model, func_list, r, diff, x, imin_set, full=true)
+                        ρ, fi_x, x_idx = relative_reduction!(model, func_list, r, diff, x, imin_set)
                         nf += r - 1
 
                     end
 
                 end
 
-                #dsc_d, s_cal, idx, ρ, fi_new = relative_reduction(model, func_list, r, kopt, countρ, ρmax, xopt, d_trs, x)
-
-                if ρ ≥ η
-
-                    it_flag = 2
-                    nρ = 0
-
-                    ### Atualizar o ponto e remover o ponto indicado pelo TRSBOX.
-                else
-
-                    it_flag = 0 #Atualizar
-                    nρ += 1
-
-                    ### Calcular a nova direção via ALTMOV e remover o ponto indicado.
-                end
-
                 #------------------------------- Radii updates ---------------------------------
 
                 if ρ < η1
+
                     δ *= τ1
                     Δ *= τ1
+
                 elseif ( ρ > η2 ) && ( norm(d) == Δ )
+
                     δ *= τ2
                     Δ *= τ2
+
                 end
 
             end
 
-            # Prints information about the iteration.
-            if verbose
-                print_iteration(countit, countf, it_flag, δold, Δold, fsave)
+            # Chooses the point 't' that must leave the interpolation set. In the case of an ALTMOV call,
+            # it also computes the new point 'x' and the direction 'd'.
+            if ρ ≥ η
+
+                t = choose_index_trsbox(model, Δ, x)
+
+                it_flag = 2
+                nρ = 0
+
+            else
+
+                t = choose_index_altmov(model)
+
+                altmov_flag = altmov!(model, t, ao, bo, x, d, active_set)
+
+                if altmov_flag
+                    it_flag = 3
+                else
+                    it_flag = 4
+                end
+                nρ += 1
+
             end
 
             #------------------------- Verifies output conditions --------------------------
         
-            # Verifies if 'countit' exceeds 'maxit'.
+            # Verifies if 'nit' exceeds 'maxit', or if 'nf' exceeds 'maxfun'. 
             if nit ≥ maxit
+
                 exit_flag = -1
                 break
-            end
 
-            # Verifies if 'countf' exceeds 'maxfun'.
-            if nf ≥ maxfun
+            elseif nf ≥ maxfun
+
                 exit_flag = -2
                 break
+
+            else
+
+                if verbose ≥ 1
+                    print_iteration( full_calc, it_flag, nit, nf, model.imin[], δold, Δold, model.fval[model.kopt[]] )
+                end
+
             end
 
             #--------------------------- Radii adjustments phase ---------------------------
-            
-            if ρ ≥ η
-                
-                if s_cal
-                    # Computes fmin(xnew) and an index in Imin(xnew).
-                    fmin_new, imin_new = fmin_partial_eval(func_list, r, idx, fi_new, xnew)
-                    countf += r - 1
-                    if imin_new != model.imin
-                        # Verifies if the index 'model.imin' belongs to the set Imin(xnew).
-                        i_imin = verify_index_imin(func_list, model.imin, fmin_new, xnew)
-                        countf += 1
-                        # If it is true, 'imin_new' is set to 'model.imin'.
-                        if i_imin
-                            imin_new = imin
-                        end
-                    end
-                else
-                    # Verifies if the index 'model.imin' belongs to the set Imin(xnew).
-                    i_imin = verify_index_imin(func_list, model.imin, fi_new, xnew)
 
-                    # If it is true, 'imin_new' is set to 'model.imin', otherwise, 'imin_new' is set do idx.
-                    if i_imin
-                        imin_new = model.imin
-                    else
-                        imin_new = idx
-                        fmin_new = fi_new
+            if ρ ≥ η
+
+                if full_calc
+
+                    if imin_set[ model.imin[] ]
+
+                        x_idx = model.imin[]
+
                     end
+
+                else
+
+                    fi_x, x_idx = fmin_partial_eval!( func_list, r, x_idx, fi_x, x, imin_set )
+                    nf += r - 1
+
+                    if imin_set[ model.imin[] ]
+
+                        x_idx = model.imin[]
+
+                    end
+
                 end
 
-                if imin_new != model.imin
+                if x_idx != model.imin[]
 
                     if ρ ≥ η1
 
-                        Γ = 0
+                        nΓ = 0
 
                     end
 
-                    if Γ ≤ Γmax
+                    if nΓ ≤ Γmax
 
                         # Adjusts the radii to create a new model.
                         δ = τ3 * δold
                         Δ = max( τ3 * Δold, Δinit )
-                        Γ += 1
+                        nΓ += 1
 
                     end
-                    
-                    # Constructs a new linear model
-                    model.imin = imin_new
-                    model.fval[1] = fmin_new
-                    model = model_from_scratch!(model, func_list, δ, b)
+
+                    # Constructs a new model and set the new relative bounds 'ao' and 'bo'.
+                    construct_new_model!( func_list, x_idx, δ, fi_x, x, a, b, ao, bo, model )                   
 
                 else
 
-                    # Updates the linear model with TRSBOX information
-                    update_model!( model, t_trs, fi_new, d_trs)
+                    # Updates the model with TRSBOX information
+                    update_model!( t, fi_x, x, model, trsbox_step = true)
 
                 end
 
             else
 
-                # Updates the linear model with ALTMOV information
-                update_model!( model, t_alt, fi_new, d_alt)
+                # Computes the new function value, increases the function evaluation counter, and updates the model with ALTMOV information
+                fi_x = fi_eval( func_list, model.imin[], x)
+                nf += 1
+                update_model!( t, fi_x, x, model)
 
             end
 
             # Increases iteration counter
-            countit += 1
+            nit += 1
 
         end
 
