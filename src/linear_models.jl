@@ -177,7 +177,6 @@ function update_model!(
         end
 
         model.dst[t] = norm( model.Y[t, :] )
-        rebuild_model!(model)
 
     else
 
@@ -202,8 +201,6 @@ function update_model!(
 
                 end
 
-                rebuild_model!(model)
-
             else
 
                 model.fval[1] = fnew
@@ -222,8 +219,6 @@ function update_model!(
                     model.dst[i] = norm( model.Y[i, :] )
 
                 end
-                
-                rebuild_model!(model)
 
             end
 
@@ -232,21 +227,26 @@ function update_model!(
             model.fval[ t + 1 ] = fnew
             @. model.Y[t, :] = xnew - model.xbase
             model.dst[t] = norm( model.Y[t, :] )
-
-            if model.fval[ model.kopt[] ] ≤ fnew
+            
+            if model.fval[ model.kopt[] ] > fnew
 
                 model.kopt[] = t + 1
                 for i=1:model.n
+
                     model.xopt[i] = xnew[i]
+                    if i != t
+                        model.dst[i] = norm( model.Y[i, :] - model.Y[t, :] )
+                    end
+
                 end
 
             end
 
-            rebuild_model!(model)
-
         end
 
     end
+
+    rebuild_model!(model)
 
 end
 
