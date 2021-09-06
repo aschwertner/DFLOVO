@@ -318,7 +318,7 @@ end
 
 function projection_active_set!(
                                 v::Vector{Float64}, 
-                                active_set::Vcetor{Bool}, 
+                                active_set::Vector{Bool}, 
                                 proj_v::Vector{Float64};
                                 sym::Bool=false
                                 )
