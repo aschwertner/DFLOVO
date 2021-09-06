@@ -165,6 +165,11 @@ function update_model!(
 
     if trsbox_step
 
+        # If the step is of the TRSBOX type, the center of the sample set 'xbase' is never changed. Note that 't' is different from 'model.kopt[]'.
+        # Since such a step is a descent direction for the model, 'fnew' is always less than the value of the function in 'xopt'.
+        # The information about 'xopt' is also useful for the new model, so we maintain 'xopt' in the interpolation set 'Y', overwrite the point 't' by 'xnew',
+        # and update 'xopt' to 'xnew'.
+
         model.kopt[] = t + 1
         model.fval[t + 1] = fnew
 
@@ -175,35 +180,28 @@ function update_model!(
 
         end
 
-        model.dst[t] = norm( model.Y[t, :] )
+        @views for i=1:model.n
+            if i == t
+                model.dst[i] = norm( model.Y[i, :] )
+            else
+                model.dst[i] = norm( model.Y[i, :] - model.Y[t, :] )
+            end
+        end
 
     else
 
+        # On the other hand, if the step is of type ALTMOV, the center of the sample set 'xbase' can be dropped or not from 'Y'.
+        # Also, the best point so far 'xopt' can be changed or not, although the information about 'xopt' is always used for the new model.
+        # Note that in the case where the points 'xbase' and 'xopt' coincide, the index 't' will never be 0. 
+
         if t == 0
 
-            if model.fval[ model.kopt[] ] ≤ fnew
+            # The point 'xbase' is dropped.
 
-                model.fval[1] = model.fval[ model.kopt[] ]
-                model.fval[ model.kopt[] ] = fnew
-                model.kopt[] = 1
+            if fnew < model.fval[ model.kopt[] ]
 
-                for i=1:model.n
-
-                    @. model.Y[i, :] += model.xbase - model.xopt
-
-                end
-
-                for i=1:model.n
-
-                    model.xbase[i] = model.xopt[i]
-                    model.dst[i] = norm( model.Y[i, :] )
-
-                end
-
-            else
-
-                model.fval[1] = fnew
-                model.kopt[] = 1
+                # The point 'xnew' is set to the new 'xbase' and 'xopt' is updated to 'xnew'.
+                # The old information about the point 'xopt' is used in the new model.
 
                 for i=1:model.n
 
@@ -219,17 +217,54 @@ function update_model!(
 
                 end
 
+                model.fval[1] = fnew
+                model.kopt[] = 1
+
+            else
+
+                # The point 'xopt' is set to be the new 'xbase' and 'xnew' is incorporated as a point in the set 'Y'.
+
+                for i=1:model.n
+
+                    if i == ( model.kopt[] - 1 )
+
+                        @. model.Y[i, :] = xnew - model.xopt
+
+                    else
+
+                        @. model.Y[i, :] += model.xbase - model.xopt
+
+                    end
+
+                end
+
+                for i=1:model.n
+
+                    model.xbase[i] = model.xopt[i]
+                    model.dst[i+1] = norm( model.Y[i, :] )
+
+                end
+
+                model.fval[1] = model.fval[ model.kopt[] ]
+                model.fval[ model.kopt[] ] = fnew
+                model.kopt[] = 1
+
             end
 
         else
 
+            # The point 'xbase' is maintained.
+
             model.fval[ t + 1 ] = fnew
             @. model.Y[t, :] = xnew - model.xbase
-            model.dst[t] = norm( model.Y[t, :] )
             
-            if model.fval[ model.kopt[] ] > fnew
+            if fnew < model.fval[ model.kopt[] ]
 
+                # The point 'xopt' is updated to 'xnew'.
+
+                model.dst[t] = norm( model.Y[t, :] )
                 model.kopt[] = t + 1
+
                 for i=1:model.n
 
                     model.xopt[i] = xnew[i]
@@ -238,6 +273,10 @@ function update_model!(
                     end
 
                 end
+
+            else
+
+                model.dst[t] = norm( xnew - model.xopt )
 
             end
 
