@@ -13,9 +13,9 @@ module LOWDER
     using Printf
 
     # Load code
+    include("lowder_types.jl")
     include("lovo_utils.jl")
     include("utils.jl")
-    include("lowder_types.jl")
     include("linear_models.jl")
     include("lowder_output.jl")
 
