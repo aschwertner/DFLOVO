@@ -105,7 +105,7 @@ module LOWDER
         nf += r
 
         # Creates the initial model, modifying the previous 'model' structure.
-        construct_model!(func_list, imin_idx, δ, fbase, xbase, ao, bo, model)
+        construct_model!(func_list, imin_idx, δ, fbase, x, ao, bo, model)
 
         # Updates de function call counter.
         nf += n - 1
