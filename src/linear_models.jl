@@ -74,23 +74,27 @@ function construct_model!(
         model.xopt[i] = xbase[i]
 
         # Constructs the set interpolation points 'model.Y', shifted from 'xbase'.
+        # Evaluates the function values and saves the information in 'model.fval'.
         if bo[i] == 0.0
 
             model.Y[i, i] = - δ
+
+            xbase[i] -= δ
+            model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
+            xbase[i] += δ
 
         else
 
             model.Y[i, i] = δ
 
+            xbase[i] += δ
+            model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
+            xbase[i] -= δ
+
         end
 
         # Saves the distance between the i-th point in 'model.Y' and 'model.xbase'.
         model.dst[i] = δ
-
-        # Evaluates the function values and saves the information in 'model.fval'.
-        xbase[i] += α
-        model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
-        xbase[i] -= α
 
         # Searches for the least function value to determine 'kopt'.
         if model.fval[i + 1] < fbase
@@ -112,8 +116,8 @@ function construct_model!(
 
         model.xopt[kopt - 1] += model.Y[kopt - 1, kopt - 1]
 
-        @. model.dst *= srqt(2.0)
-        model.dst[kopt] = δ
+        @. model.dst *= sqrt(2.0)
+        model.dst[kopt - 1] = δ
 
     end
 
@@ -378,7 +382,7 @@ function rebuild_model!(
                         )
 
     # Solves the system to determine the gradient of the linear model 'model.g'
-    model.g = model.Y \ ( model.fval[2:end] .- model.fval[1] )
+    model.g .= model.Y \ ( model.fval[2:end] .- model.fval[1] )
 
     # Determines the constant of the linear model 'model.c'
     model.c[] = model.fval[1] - dot( model.g, model.xbase )
@@ -412,7 +416,11 @@ function trsbox!(
                     )
     
     # Copies the shifted vector 'xopt' to 'x'.
-    copyto!(x, model.Y[model.kopt, :])
+    if model.kopt[] == 1
+        @. x = 0.0
+    else
+        copyto!(x, model.Y[model.kopt[] - 1, :])
+    end
 
     # Creates the active constraint vector 'active_set'.
     compute_active_set!(model, ao, bo, active_set)
