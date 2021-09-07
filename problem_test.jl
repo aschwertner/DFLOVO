@@ -19,4 +19,4 @@ x = [3.0, 3.0]
 a = [0.0, 0.0]
 b = [5.0, 5.0]
 
-sol = lowder(fmin_list, x, a, b, 1.0, 1.5, m = 3, maxit = 100, maxfun = 75, verbose = 3)
+sol = LOWDER.lowder(fmin_list, x, a, b, 1.0, 1.5, m = 3, maxit = 100, maxfun = 75, verbose = 3)
