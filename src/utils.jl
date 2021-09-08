@@ -28,9 +28,13 @@ function verify_initial_room(
                                 )
 
     for i = 1:n
+
         if ( b[i] - a[i] ) < ( 2.0 * δ )
+
             return false 
+
         end
+
     end
 
     return true
@@ -74,29 +78,44 @@ function correct_guess_bounds!(
                                 )
 
     for i=1:n
+
         ao[i] = a[i] - x[i]
         bo[i] = b[i] - x[i]
+
         if ao[i] >= - δ
+
             if ao[i] >= 0.0
+
                 x[i] = a[i]
                 ao[i] = 0.0
                 bo[i] = b[i] - a[i]
+
             else
+
                 x[i] = a[i] + δ
                 ao[i] = - δ
                 bo[i] = max( b[i] - x[i], δ )
+
             end
+
         elseif bo[i] <= δ
+
             if bo[i] <= 0.0
+
                 x[i] = b[i]
                 ao[i] = a[i] - b[i]
                 bo[i] = 0.0
+
             else
+
                 x[i] = b[i] - δ
                 ao[i] = min( a[i] - x[i], - δ )
                 bo[i] = δ
+
             end
+
         end
+
     end
 
 end
@@ -144,14 +163,21 @@ function reconstruct_original_point!(
                                         )
     
     for i=1:n
-        x[i] = min( max( a[i], xbase[i] + Y[i, idx] ), b[i] )
-        if Y[i, idx] == ao[i]
-            x[i] = a[i]
-        elseif Y[i, idx] == bo[i]
-            x[i] = b[i]
-        end
-    end
 
+        x[i] = min( max( a[i], xbase[i] + Y[i, idx] ), b[i] )
+
+        if Y[i, idx] == ao[i]
+
+            x[i] = a[i]
+
+        elseif Y[i, idx] == bo[i]
+
+            x[i] = b[i]
+
+        end
+
+    end
+    
 end
 
 function relative_reduction(
@@ -198,23 +224,35 @@ function print_warning(
                         )
 
     if flag == 1
+
         printstyled("Success: ", bold=true, color=:light_green)
         println("The algorithm succeeded.")
+
     elseif flag == -1
+
         printstyled("Warning: ", bold=true, color=:light_red)
         println("The maximum number of iterations has been reached.")
+
     elseif flag == -2
+
         printstyled("Warning: ", bold=true, color=:light_red)
         println("The maximum number of function evaluations has been reached.")
+
     elseif flag == -3
+
         printstyled("Warning: ", bold=true, color=:light_red)
         println("The calculated direction is not downhill for the model.")
+
     elseif flag == -11
+
         printstyled("Notice: ", bold=true, color=:light_yellow)
         println("A better value will be obtained when evaluating the function on 'xopt'.")
+
     else
+
         printstyled("Warning: ", bold=true, color=:light_red)
         println("Exit flag not specified.")
+
     end
 
 end
@@ -251,20 +289,34 @@ function print_iteration(
                             )
         
     if flag == 1
+
         it_type = "criticality"
+
     elseif flag == 2
+
         it_type = "trust-region"
+
     elseif flag == 3
+
         it_type = "altmov"
+
     elseif flag == 4
+
         it_type = "altmov-cauchy"
+
     else
+
         it_type = "not especified"
+
     end
+
     if countit == 0
+
         println("--------------------------------------------------------------------------------")
         println("--------------------------------------------------------------------------------")
+
     end
+
     println("Iteration  : $(countit)")
     println("Func. eval.: $(countf)")
     println("δ          : $(δ)")
@@ -298,7 +350,7 @@ function print_info(
 
             print_warning(exit_flag)
 
-            if model.kopt[] != 1
+            if model.kopt[] != 0
 
                 print_warning(-11)
 
@@ -324,15 +376,25 @@ function projection_active_set!(
                                 )
 
     for i=1:length(v)
+
         if active_set[i]
+
             proj_v[i] = 0.0
+
         else
+
             if sym
+
                 proj_v[i] = - v[i]
+
             else
+
                 proj_v[i] = v[i]
+
             end
+
         end
+        
     end
 
 end

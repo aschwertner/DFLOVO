@@ -91,7 +91,9 @@ module LOWDER
 
         # Create an empty structure called 'model', which can hold a linear or quadratic model.
         if n == (m - 1)
+
             model = create_linear_model(n)
+
         end
 
         # Modifies the initial estimate 'x' to be suitable for building the first model. 
@@ -161,7 +163,7 @@ module LOWDER
                 #------------------------------- Step acceptance -------------------------------
 
                 mnew = model(x)
-                diff = model.fval[model.kopt[]] - mnew
+                diff = model.fval[ model.kopt[] + 1 ] - mnew
                 full_calc = false
 
                 if diff < 0
@@ -219,10 +221,15 @@ module LOWDER
                 altmov_flag = altmov!(model, t, ao, bo, x, d, active_set)
 
                 if altmov_flag
+
                     it_flag = 3
+
                 else
+
                     it_flag = 4
+
                 end
+
                 nρ += 1
 
             end
@@ -243,7 +250,9 @@ module LOWDER
             else
 
                 if verbose ≥ 1
-                    print_iteration( full_calc, it_flag, nit, nf, model.imin[], δold, Δold, model.fval[model.kopt[]] )
+
+                    print_iteration( full_calc, it_flag, nit, nf, model.imin[], δold, Δold, model.fval[ model.kopt[] + 1 ] )
+
                 end
 
             end
@@ -316,7 +325,7 @@ module LOWDER
 
         #---------------------- Preparations to finish execution  ----------------------
 
-        if fi_x < model.fval[ model.kopt[] ]
+        if fi_x < model.fval[ model.kopt[] + 1 ]
 
             @. model.xopt = x
             model.fval[ model.kopt[] ] = fi_x

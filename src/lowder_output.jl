@@ -10,10 +10,14 @@ function create_output(
                         full_calc::Bool
                         )
 
-    if ( model.kopt[] == 1 ) || ( full_calc )
+    if ( model.kopt[] == 0 ) || ( full_calc )
+
         return LOWDEROutput(nit, model.imin[], nf, exit_flag, true, model.fval[1], model.xopt)
+
     else
-        return LOWDEROutput(nit, model.imin[], nf, exit_flag, false, model.fval[model.kopt[]], model.xopt)
+
+        return LOWDEROutput(nit, model.imin[], nf, exit_flag, false, model.fval[ model.kopt[] + 1 ], model.xopt)
+
     end
 
 end

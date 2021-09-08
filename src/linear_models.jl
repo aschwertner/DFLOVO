@@ -65,7 +65,7 @@ function construct_model!(
     model.imin[] = imin_idx
     model.fval[1] = fbase
 
-    kopt = 1
+    kopt = 0
 
     for i = 1:model.n
 
@@ -99,8 +99,8 @@ function construct_model!(
         # Searches for the least function value to determine 'kopt'.
         if model.fval[i + 1] < fbase
 
-            kopt = i + 1
-            fbase = model.fval[kopt]
+            kopt = i
+            fbase = model.fval[i + 1]
 
         end
 
@@ -112,12 +112,12 @@ function construct_model!(
     # If the best point is not 'xbase', updates the vector 'xopt' and saves the information in 'model.xopt'.
     # Also updates the vector of 'model.dst', to store the distance between the interpolation points and 'xopt'.
     # Note that in the 'kopt' position of the 'model.dst' vector we keep the distance between 'xbase' and 'xopt' points. 
-    if kopt != 1
+    if kopt != 0
 
-        model.xopt[kopt - 1] += model.Y[kopt - 1, kopt - 1]
+        model.xopt[kopt] += model.Y[kopt, kopt]
 
         @. model.dst *= sqrt(2.0)
-        model.dst[kopt - 1] = δ
+        model.dst[kopt] = δ
 
     end
 
@@ -157,7 +157,7 @@ function stationarity_measure(
 
 end
 
-( model::LinearModel )( x::AbstractVector ) = model.c + dot( model.g, x )
+( model::LinearModel )( x::AbstractVector ) = model.c[] + dot( model.g, x )
 
 function update_model!(
                         t::Int64,
@@ -174,7 +174,7 @@ function update_model!(
         # The information about 'xopt' is also useful for the new model, so we maintain 'xopt' in the interpolation set 'Y', overwrite the point 't' by 'xnew',
         # and update 'xopt' to 'xnew'.
 
-        model.kopt[] = t + 1
+        model.kopt[] = t
         model.fval[t + 1] = fnew
 
         for i=1:model.n
@@ -202,7 +202,7 @@ function update_model!(
 
             # The point 'xbase' is dropped.
 
-            if fnew < model.fval[ model.kopt[] ]
+            if fnew < model.fval[ model.kopt[] + 1 ]
 
                 # The point 'xnew' is set to the new 'xbase' and 'xopt' is updated to 'xnew'.
                 # The old information about the point 'xopt' is used in the new model.
@@ -222,7 +222,7 @@ function update_model!(
                 end
 
                 model.fval[1] = fnew
-                model.kopt[] = 1
+                model.kopt[] = 0
 
             else
 
@@ -230,7 +230,7 @@ function update_model!(
 
                 for i=1:model.n
 
-                    if i == ( model.kopt[] - 1 )
+                    if i == model.kopt[]
 
                         @. model.Y[i, :] = xnew - model.xopt
 
@@ -245,13 +245,13 @@ function update_model!(
                 for i=1:model.n
 
                     model.xbase[i] = model.xopt[i]
-                    model.dst[i+1] = norm( model.Y[i, :] )
+                    model.dst[i] = norm( model.Y[i, :] )
 
                 end
 
-                model.fval[1] = model.fval[ model.kopt[] ]
-                model.fval[ model.kopt[] ] = fnew
-                model.kopt[] = 1
+                model.fval[1] = model.fval[ model.kopt[] + 1 ]
+                model.fval[ model.kopt[] + 1 ] = fnew
+                model.kopt[] = 0
 
             end
 
@@ -262,12 +262,12 @@ function update_model!(
             model.fval[ t + 1 ] = fnew
             @. model.Y[t, :] = xnew - model.xbase
             
-            if fnew < model.fval[ model.kopt[] ]
+            if fnew < model.fval[ model.kopt[] + 1 ]
 
                 # The point 'xopt' is updated to 'xnew'.
 
                 model.dst[t] = norm( model.Y[t, :] )
-                model.kopt[] = t + 1
+                model.kopt[] = t
 
                 for i=1:model.n
 
@@ -312,7 +312,7 @@ function construct_new_model!(
     model.imin[] = imin_idx
     model.fval[1] = fbase
 
-    kopt = 1
+    kopt = 0
 
     for i = 1:model.n
 
@@ -350,7 +350,7 @@ function construct_new_model!(
         # Searches for the least function value to determine 'kopt'.
         if model.fval[i + 1] < fbase
 
-            kopt = i + 1
+            kopt = i
             fbase = model.fval[kopt]
 
         end
@@ -363,9 +363,9 @@ function construct_new_model!(
     # If the best point is not 'xbase', updates the vector 'xopt' and saves the information in 'model.xopt'.
     # Also updates the vector of 'model.dst', to store the distance between the interpolation points and 'xopt'.
     # Note that in the 'kopt' position of the 'model.dst' vector we keep the distance between 'xbase' and 'xopt' points. 
-    if kopt != 1
+    if kopt != 0
 
-        model.xopt[kopt - 1] += model.Y[kopt - 1, kopt - 1]
+        model.xopt[ kopt ] += model.Y[ kopt, kopt ]
 
         @. model.dst *= srqt(2.0)
         model.dst[kopt] = δ
@@ -395,12 +395,39 @@ function compute_active_set!(
                         bo::Vector{Float64},
                         active_set::Vector{Bool}
                         )
-    for i=1:model.n
-        if ( model.Y[model.kopt, i] == ao[i] && model.g[i] >= 0.0 ) || ( model.Y[model.kopt, i] == bo[i] && model.g[i] <= 0.0 )
-            active_set[i] = true
-        else
-            active_set[i] = false
+
+    if model.kopt[] == 0
+
+        for i=1:model.n
+
+            if ( ao[i] == 0.0 && model.g[i] >= 0.0 ) || ( bo[i] == 0.0 && model.g[i] <= 0.0 )
+
+                active_set[i] = true
+
+            else
+            
+                active_set[i] = false
+
+            end
+
         end
+
+    else
+
+        for i=1:model.n
+
+            if ( model.Y[ model.kopt[], i] == ao[i] && model.g[i] >= 0.0 ) || ( model.Y[ model.kopt[], i] == bo[i] && model.g[i] <= 0.0 )
+
+                active_set[i] = true
+
+            else
+            
+                active_set[i] = false
+
+            end
+
+        end
+
     end
 
 end
@@ -416,10 +443,14 @@ function trsbox!(
                     )
     
     # Copies the shifted vector 'xopt' to 'x'.
-    if model.kopt[] == 1
+    if model.kopt[] == 0
+
         @. x = 0.0
+
     else
-        copyto!(x, model.Y[model.kopt[] - 1, :])
+
+        copyto!(x, model.Y[ model.kopt[], : ])
+
     end
 
     # Creates the active constraint vector 'active_set'.
@@ -432,25 +463,39 @@ function trsbox!(
     # If the set of active constraints is not complete,
     # calculates step 'd' and updates point 'x'.
     if sum(active_set) != model.n
+
         α = Inf
         α_B = Inf
         α_Δ = Δ / norm(d)
 
         for i=1:model.n
+
             if d[i] > 0.0
+
                 α = ( bo[i] - model.Y[model.kopt[], i] ) / d[i]
+
             elseif d[i] < 0.0
+
                 α = ( ao[i] - model.Y[model.kopt[], i] ) / d[i]
+
             end
+
             if α < α_B
+
                 α_B = α
+
             end
+
         end
 
         if α_Δ ≤ α_B
+
             @. d *= α_Δ
+
         else
+
             @. d *= α_B
+
         end
 
         @. x += d
@@ -472,20 +517,24 @@ function choose_index_trsbox(
     α = - Inf
 
     for i=1:model.n
+
         if i != model.kopt[]
+
             e_t[i] = 1.0
-
             ldiv!(sol_t, qrY, e_t)
-
             α_t = max( 1.0, ( model.dst[i] / Δ ) ^ 2.0 ) * ( 1.0 + dot(d_base, sol_t) )
 
             if α_t > α
+
                 α = α_t
                 t = i
+
             end
 
             e_t[i] = 0.0
+
         end
+
     end
 
     return t
@@ -496,10 +545,12 @@ function choose_index_altmov(
                                 model::LinearModel
                             )
     
-    ( val, idx_t ) = findmin(model.dst)
+    ( val, idx_t ) = findmin( model.dst )
 
     if idx_t == model.kopt[]
+
         idx_t = 0
+
     end
 
     return idx_t
@@ -554,9 +605,13 @@ function altmov!(
         # i-th interpolation point and 'xopt'. In the case where 'i' = 'kopt',
         # 'd' holds the difference between 'xbase' and 'xopt'. 
         if j == model.kopt[]
-            @. d = - model.Y[model.kopt, :]
+
+            @. d = - model.Y[model.kopt[], :]
+
         else
+
             @. d = model.Y[j, :] - model.Y[model.kopt[], :]
+
         end
 
         # Gets the bounds for α_{j} relative to the trust-region.
@@ -565,13 +620,19 @@ function altmov!(
 
         # Adjusts the bounds to the box constraints.
         for i = 1:model.n
+
             if d[i] > 0.0
+
                 α_lower = max( α_lower, ( ao[i] - model.xopt[i] ) / d[i] )
                 α_upper = min( α_upper, ( bo[i] - model.xopt[i] ) / d[i] )
+
             elseif d[i] < 0.0
+
                 α_lower = min( α_lower, ( bo[i] - model.xopt[i] ) / d[i] )
                 α_upper = max( α_upper, ( ao[i] - model.xopt[i] ) / d[i] )
+
             end
+
         end
 
         # Since the Lagrange polynomial is linear, the optimal α is either lower or upper value.
@@ -582,11 +643,15 @@ function altmov!(
         ϕ_upper = Λ_t(model, idx_t, x, qrY)
 
         if abs(ϕ_lower) > abs(ϕ_upper)
+
             α_j = α_lower
             abs_ϕ_j = abs(ϕ_lower)
+
         else
+
             α_j = α_upper
             abs_ϕ_j = abs(ϕ_upper)
+
         end
 
         # Compares the best ϕ_j value so far
@@ -659,22 +724,35 @@ function altmov_cauchy!(
     z = zeros(Float64, model.n)
 
     if sym
+
         p = 1.0
+
     else
+
         p = 2.0
+
     end
 
     norm2_s = 0.0
+
     for i = 1:model.n
+
         if ( (- 1.0) ^ p ) * ∇Λ_t[i] > 0.0
+
             s[i] = ao[i] - model.xopt[i]
             norm2_s += s[i] ^ 2.0
+
         elseif ( (- 1.0) ^ p ) * ∇Λ_t[i] < 0.0
+
             s[i] = bo[i] - model.xopt[i]
             norm2_s += s[i] ^ 2.0
+
         else
+
             s[i] == 0.0
+
         end
+
     end
 
     if norm2_s ≤ ( Δ ^ 2.0 )
@@ -682,9 +760,13 @@ function altmov_cauchy!(
         @. z = model.Y[model.kopt[], :] + s
 
         if idx_t == 0
+
             return abs( 1.0 + dot(z, ∇Λ_t) )
+
         else
+
             return abs( dot(z, ∇Λ_t) )
+
         end
 
     end
@@ -694,6 +776,7 @@ function altmov_cauchy!(
     
     sum_free = 0.0
     sum_fixed = 0.0
+
     for i = 1:model.n
 
         if s[i] != 0.0
@@ -752,7 +835,9 @@ function altmov_cauchy!(
                         sum_free += ∇Λ_t[i] ^ 2.0
 
                     end
+
                 end
+                
             end
 
             if stop || ( sum_free == 0.0 )
