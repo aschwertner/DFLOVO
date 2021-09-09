@@ -188,7 +188,7 @@ function relative_reduction(
                             )
 
     f_y = fi_eval(func_list, model.imin[], y)
-    ρ = ( model.fval[model.kopt[]] - f_y ) / ( diff )
+    ρ = ( model.fval[model.kopt[] + 1] - f_y ) / ( diff )
 
     return ρ, f_y, model.imin[]
 
@@ -204,7 +204,7 @@ function relative_reduction!(
                             )
 
     fmin_y, idx_y = fmin_eval!(func_list, r, y, imin_set)
-    ρ = ( model.fval[model.kopt[]] - fmin_y ) / ( diff )
+    ρ = ( model.fval[model.kopt[] + 1] - fmin_y ) / ( diff )
 
     return ρ, fmin_y, idx_y
 
