@@ -86,6 +86,8 @@ module LOWDER
         active_set = zeros(Bool, n) # Set of active constraints.
         imin_set = zeros(Bool, r)   # Set I_{min}(x)
         full_calc = false
+        verif_new_info = true
+        it_flag = 0
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -115,11 +117,14 @@ module LOWDER
         # Returns if 'nf' exceeds 'maxfun'.
         if nf ≥ maxfun
 
+            it_flag = 0
+            exit_flag = -2
+
             # Creates the LOWDEROutput.
-            output = create_output(model, nit, nf, -2, full_calc)
+            output = create_output(model, nit, nf, exit_flag, full_calc)
 
             # Prints information about the iteration, exit flag and LOWDEROutput.
-            print_info(model, output, false, verbose, -2, 0, nit, nf, δ, Δ)
+            print_info(model, output, false, verbose, exit_flag, it_flag, nit, nf, δ, Δ)
             
             return output
             
@@ -138,6 +143,8 @@ module LOWDER
             # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'πmin', respectively.
             if ( δ ≤ δmin ) && ( π ≤ πmin )
 
+                # Sets iteration and exit flags
+                it_flag = 0
                 exit_flag = 1
                 break
 
@@ -184,6 +191,7 @@ module LOWDER
                         full_calc = true
                         ρ, fi_x, x_idx = relative_reduction!(model, func_list, r, diff, x, imin_set)
                         nf += r - 1
+                        nρ = 0
 
                     end
 
@@ -218,7 +226,10 @@ module LOWDER
 
                 t = choose_index_altmov(model)
 
-                altmov_flag = altmov!(model, t, ao, bo, x, d, active_set)
+                altmov_flag = altmov!(model, t, Δ, a, b, x, d, active_set)
+
+                fi_x = fi_eval( func_list, model.imin[], x)
+                nf += 1
 
                 if altmov_flag
 
@@ -311,9 +322,7 @@ module LOWDER
 
             else
 
-                # Computes the new function value, increases the function evaluation counter, and updates the model with ALTMOV information
-                fi_x = fi_eval( func_list, model.imin[], x)
-                nf += 1
+                # Updates the model with ALTMOV information
                 update_model!( t, fi_x, x, model)
 
             end
@@ -325,7 +334,13 @@ module LOWDER
 
         #---------------------- Preparations to finish execution  ----------------------
 
-        if fi_x < model.fval[ model.kopt[] + 1 ]
+        if ( it_flag == 0 ) || ( it_flag == 1 )
+
+            verif_new_info = false
+
+        end
+
+        if verif_new_info && ( fi_x < model.fval[ model.kopt[] + 1 ] )
 
             @. model.xopt = x
             model.fval[ model.kopt[] ] = fi_x
