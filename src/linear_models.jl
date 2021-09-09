@@ -432,7 +432,7 @@ function compute_active_set!(
 
 end
 
-function trsbox!(
+function old_trsbox!(
                     model::LinearModel,
                     Δ::Float64,
                     ao::Vector{Float64},
@@ -458,7 +458,7 @@ function trsbox!(
 
     # Computes the symmetric vector of the projection of the 
     # gradient of the model by the set of active constraints.
-    projection_active_set!(model.g, active_idx, d, sym = true)
+    projection_active_set!(model.g, active_set, d, sym = true)
 
     # If the set of active constraints is not complete,
     # calculates step 'd' and updates point 'x'.
@@ -504,6 +504,96 @@ function trsbox!(
     
 end
 
+function trsbox!(
+                    model::LinearModel,
+                    Δ::Float64,
+                    ao::Vector{Float64},
+                    bo::Vector{Float64},
+                    active_set::Vector{Bool},
+                    x::Vector{Float64},
+                    d::Vector{Float64}
+                    )
+    
+    # Copies the vector 'xopt' to 'x'.
+    copyto!(x, model.xopt)
+
+    # Creates the active constraint vector 'active_set'.
+    compute_active_set!(model, ao, bo, active_set)
+
+    # Computes the symmetric vector of the projection of the 
+    # gradient of the model by the set of active constraints.
+    projection_active_set!(model.g, active_set, d, sym = true)
+
+    # If the set of active constraints is not complete,
+    # calculates step 'd' and updates point 'x'.
+    if sum(active_set) != model.n
+
+        α = Inf
+        α_B = Inf
+        α_Δ = Δ / norm(d)
+
+        if model.kopt[] == 0
+
+            for i=1:model.n
+
+                if d[i] > 0.0
+
+                    α = bo[i] / d[i]
+
+                elseif d[i] < 0.0
+
+                    α = ao[i] / d[i]
+
+                end
+
+                if α < α_B
+
+                    α_B = α
+
+                end
+
+            end
+
+        else
+
+            for i=1:model.n
+
+                if d[i] > 0.0
+
+                    α = ( bo[i] - model.Y[model.kopt[], i] ) / d[i]
+
+                elseif d[i] < 0.0
+
+                    α = ( ao[i] - model.Y[model.kopt[], i] ) / d[i]
+
+                end
+
+                if α < α_B
+
+                    α_B = α
+
+                end
+
+            end
+
+        end
+
+        if α_Δ ≤ α_B
+
+            @. d *= α_Δ
+
+        else
+
+            @. d *= α_B
+
+        end
+
+        @. x += d
+
+    end
+    
+end
+
 function choose_index_trsbox(
                                 model::LinearModel,
                                 Δ::Float64,
@@ -515,6 +605,7 @@ function choose_index_trsbox(
     sol_t = zeros(model.n)
     qrY = qr(model.Y, Val(true))
     α = - Inf
+    t = - 1
 
     for i=1:model.n
 
@@ -588,8 +679,9 @@ end
 function altmov!(
                     model::LinearModel,
                     idx_t::Int64,
-                    ao::Vector{Float64},
-                    bo::Vector{Float64},
+                    Δ::Float64,
+                    a::Vector{Float64},
+                    b::Vector{Float64},
                     x::Vector{Float64},
                     d::Vector{Float64},
                     altmov_set::Vector{Bool}
@@ -597,20 +689,30 @@ function altmov!(
 
     qrY = qr(model.Y, Val(true))
     best_abs_ϕ = - 1.0
+    best_idx = 0
+    best_α = Inf
 
     # Calculates the "Usual" Alternative Step
     for j = 1:model.n
 
-        # Uses 'd' as a workspace to save the difference between the 
-        # i-th interpolation point and 'xopt'. In the case where 'i' = 'kopt',
-        # 'd' holds the difference between 'xbase' and 'xopt'. 
-        if j == model.kopt[]
+        # Uses 'd' as a workspace to save the difference between the j-th interpolation point and 'xopt'.
+        # If 'xopt' and 'xbase' coincide, such differences are already calculated and available in the matrix 'model.Y'.
+        # Otherwise, if 'xopt' is not the center of the sample set, and 'j' = 'kopt', 'd' holds the difference between 'xbase' and 'xopt'.
+        if model.kopt[] == 0
 
-            @. d = - model.Y[model.kopt[], :]
+            @. d = model.Y[j, :]
 
         else
 
-            @. d = model.Y[j, :] - model.Y[model.kopt[], :]
+            if j == model.kopt[]
+
+                @. d = - model.Y[model.kopt[], :]
+
+            else
+
+                @. d = model.Y[j, :] - model.Y[model.kopt[], :]
+
+            end
 
         end
 
@@ -623,13 +725,13 @@ function altmov!(
 
             if d[i] > 0.0
 
-                α_lower = max( α_lower, ( ao[i] - model.xopt[i] ) / d[i] )
-                α_upper = min( α_upper, ( bo[i] - model.xopt[i] ) / d[i] )
+                α_lower = max( α_lower, ( a[i] - model.xopt[i] ) / d[i] )
+                α_upper = min( α_upper, ( b[i] - model.xopt[i] ) / d[i] )
 
             elseif d[i] < 0.0
 
-                α_lower = min( α_lower, ( bo[i] - model.xopt[i] ) / d[i] )
-                α_upper = max( α_upper, ( ao[i] - model.xopt[i] ) / d[i] )
+                α_lower = min( α_lower, ( b[i] - model.xopt[i] ) / d[i] )
+                α_upper = max( α_upper, ( a[i] - model.xopt[i] ) / d[i] )
 
             end
 
@@ -659,7 +761,7 @@ function altmov!(
 
             best_abs_ϕ = abs_ϕ_j
             best_idx = j
-            best_α
+            best_α = α_j
 
         end
 
@@ -682,26 +784,43 @@ function altmov!(
 
     end
 
-    Λ_1 = altmov_cauchy!(model, idx_t, Δ, ∇Λ_t, ao, bo, d, altmov_set)
-    Λ_2 = altmov_cauchy!(model, idx_t, Δ, ∇Λ_t, ao, bo, x, altmov_set, sym = true)
+    Λ_1 = altmov_cauchy!(model, idx_t, Δ, ∇Λ_t, a, b, d, altmov_set)
+    Λ_2 = altmov_cauchy!(model, idx_t, Δ, ∇Λ_t, a, b, x, altmov_set, sym = true)
 
     ( val, idx ) = findmax( [ best_abs_ϕ, Λ_1, Λ_2 ] )
 
     if idx == 1
 
-        @. d = best_α * ( model.Y[ best_idx, : ] - model.Y[ model.kopt[], : ] )
+        if model.kopt[] == 0
+
+            @. d = best_α * model.Y[ best_idx, : ]
+        
+        else
+
+            if best_idx == model.kopt[]
+
+                @. d = - best_α * model.Y[ best_idx, :]
+
+            else
+
+                @. d = best_α * ( model.Y[ best_idx, : ] - model.Y[ model.kopt[], : ] )
+
+            end
+
+        end
+
         @. x = model.xopt + d
 
         return true
 
     elseif idx == 2
 
-        @. x = model.Y[ model.kopt[], :] + d
+        @. x = model.xopt + d
 
     else
 
         @. d = x
-        @. x += model.Y[ model.kopt[], : ]
+        @. x += model.xopt
 
     end
 
@@ -714,10 +833,10 @@ function altmov_cauchy!(
                         idx_t::Int64,
                         Δ::Float64,
                         ∇Λ_t::Vector{Float64},
-                        ao::Vector{Float64},
-                        bo::Vector{Float64},
+                        a::Vector{Float64},
+                        b::Vector{Float64},
                         s::Vector{Float64},
-                        active_set::Vector{Float64};
+                        active_set::Vector{Bool};
                         sym::Bool=false
                         )
 
@@ -739,12 +858,12 @@ function altmov_cauchy!(
 
         if ( (- 1.0) ^ p ) * ∇Λ_t[i] > 0.0
 
-            s[i] = ao[i] - model.xopt[i]
+            s[i] = a[i] - model.xopt[i]
             norm2_s += s[i] ^ 2.0
 
         elseif ( (- 1.0) ^ p ) * ∇Λ_t[i] < 0.0
 
-            s[i] = bo[i] - model.xopt[i]
+            s[i] = b[i] - model.xopt[i]
             norm2_s += s[i] ^ 2.0
 
         else
@@ -757,7 +876,7 @@ function altmov_cauchy!(
 
     if norm2_s ≤ ( Δ ^ 2.0 )
 
-        @. z = model.Y[model.kopt[], :] + s
+        @. z = model.xopt + s
 
         if idx_t == 0
 
@@ -824,7 +943,7 @@ function altmov_cauchy!(
 
                     step_i = s[i] + model.xopt[i]
 
-                    if ( step_i < ao[i] ) || ( step_i > bo[i] )
+                    if ( step_i < a[i] ) || ( step_i > b[i] )
                     
                         stop = false
                         active_set[i] = true
@@ -854,7 +973,15 @@ function altmov_cauchy!(
 
     end
 
-    @. z = model.Y[model.kopt[], :] + s
+    if model.kopt[] == 0
+
+        @. z = s
+
+    else
+
+        @. z = model.Y[model.kopt[], :] + s
+
+    end
 
     if idx_t == 0
 
