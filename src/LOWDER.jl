@@ -14,9 +14,9 @@ module LOWDER
 
     # Load code
     include("lowder_types.jl")
+    include("linear_models.jl")
     include("lovo_utils.jl")
     include("utils.jl")
-    include("linear_models.jl")
     include("lowder_output.jl")
 
     function lowder(
