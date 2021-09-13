@@ -285,7 +285,8 @@ function print_iteration(
                             imin_idx::Int64,
                             δ::Float64,
                             Δ::Float64,
-                            fopt::Float64
+                            fopt::Float64,
+                            xopt::Vector{Float64}
                             )
         
     if flag == 1
@@ -323,6 +324,7 @@ function print_iteration(
     println("Δ          : $(Δ)")
     println("It. type   : $(it_type)")
     println("I_min index: $(imin_idx)")
+    println("Best point : $(xopt)")
     println("Func. val. : $(fopt)")
     println("Full ρ     : $(full_calc)")
     println("--------------------------------------------------------------------------------")
@@ -344,7 +346,7 @@ function print_info(
     
     if verbose != 0
 
-        print_iteration( full_calc, it_flag, countit, countf, model.imin[], δ, Δ, model.fval[model.kopt[]] )
+        print_iteration( full_calc, it_flag, countit, countf, model.imin[], δ, Δ, model.fval[model.kopt[]], model.xopt)
 
         if verbose ≥ 2
 

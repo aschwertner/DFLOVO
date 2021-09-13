@@ -262,7 +262,7 @@ module LOWDER
 
                 if verbose ≥ 1
 
-                    print_iteration( full_calc, it_flag, nit, nf, model.imin[], δold, Δold, model.fval[ model.kopt[] + 1 ] )
+                    print_iteration( full_calc, it_flag, nit, nf, model.imin[], δold, Δold, model.fval[ model.kopt[] + 1 ], model.xopt)
 
                 end
 
