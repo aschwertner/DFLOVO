@@ -432,6 +432,67 @@ function projection_active_set!(
 
 end
 
+function compute_alpha_linear(Δ, a, b, x, d, s)
+
+    roots = []
+    α_j = Inf
+    α_B = Inf
+    idx = 0
+
+    # Computes α_B, the largest number such that 'a' ≤ 'x' + 'd' + 'α'*'s' ≤ 'b'.
+    for j=1:length(x)
+
+        if s[i] < 0.0
+
+            α_j = ( a[i] - x[i] - d[i] ) / s[i]
+
+        elseif s[i] > 0.0
+
+            α_j = ( b[i] - x[i] - d[i] ) / s[i]
+
+        end
+
+        if α_j < α_B
+
+            α_B = α_j
+            idx = j
+
+        end
+
+    end
+
+    # Computes α_Δ, the largest number such that ||'d' + 'α'*'s'|| ≤ 'Δ'.
+
+    a_2 = norm(s)
+    a_1 = 2.0 * dot(d, s)
+    a_0 = norm(d) - Δ ^ 2.0
+
+    solve_quadratic!(a_2, a_1, a_0, roots)
+
+    α_Δ = maximum(roots)
+
+    if ( α_Δ == NaN ) || ( α_Δ < 0.0 )
+
+        return α_B, 2, idx
+
+    else
+
+        α = min(α_B, α_Δ)
+
+        if α == α_Δ 
+
+            return α, 1, 0
+
+        else
+
+            return α, 2, idx
+
+        end
+
+    end
+
+end
+
 function solve_quadratic!(a, b, c, roots)
 
     if iszero(a)
