@@ -87,7 +87,12 @@ module LOWDER
         imin_set = zeros(Bool, r)   # Set I_{min}(x)
         full_calc = false
         verif_new_info = true
-        it_flag = 0
+        it_flag = :nonspecified
+        exit_flag = :nonspecified
+        fi_x = Inf
+        pred_red = Inf
+        real_red = Inf
+        ρ = Inf
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -117,14 +122,14 @@ module LOWDER
         # Returns if 'nf' exceeds 'maxfun'.
         if nf ≥ maxfun
 
-            it_flag = 0
-            exit_flag = -2
+            it_flag = :nonspecified
+            exit_flag = :max_evaluations
 
             # Creates the LOWDEROutput.
-            output = create_output(model, nit, nf, exit_flag, full_calc)
+            output = create_output(model, exit_flag, full_calc, nit, nf)
 
             # Prints information about the iteration, exit flag and LOWDEROutput.
-            print_info(model, output, false, verbose, exit_flag, it_flag, nit, nf, δ, Δ)
+            print_info(model, output, exit_flag, it_flag, verbose, nit, nf, δ, Δ, false, NaN, NaN, NaN, d)
             
             return output
             
@@ -144,8 +149,8 @@ module LOWDER
             if ( δ ≤ δmin ) && ( π ≤ πmin )
 
                 # Sets iteration and exit flags
-                it_flag = 0
-                exit_flag = 1
+                it_flag = :nonspecified
+                exit_flag = :success
                 break
 
             end
@@ -155,7 +160,7 @@ module LOWDER
                 #------------------------------ Criticality phase ------------------------------
 
                 # Sets iteration flag
-                it_flag = 1
+                it_flag = :criticality
 
                 # Update parameters
                 δ *= τ1
@@ -170,26 +175,26 @@ module LOWDER
                 #------------------------------- Step acceptance -------------------------------
 
                 mnew = model(x)
-                diff = model.fval[ model.kopt[] + 1 ] - mnew
+                pred_red = model.fval[ model.kopt[] + 1 ] - mnew
                 full_calc = false
 
-                if diff < 0
+                if pred_red < 0
 
-                    it_flag = 0
-                    exit_flag = -3
+                    it_flag = :nonspecified
+                    exit_flag = :nondescent
                     break
 
                 else
 
                     if nρ < nρmax
 
-                        ρ, fi_x, x_idx = relative_reduction(model, func_list, diff, x)
+                        ρ, real_red, fi_x, x_idx = relative_reduction(model, func_list, pred_red, x)
                         nf +=1
 
                     else
 
                         full_calc = true
-                        ρ, fi_x, x_idx = relative_reduction!(model, func_list, r, diff, x, imin_set)
+                        ρ, real_red, fi_x, x_idx = relative_reduction!(model, func_list, r, pred_red, x, imin_set)
                         nf += r - 1
                         nρ = 0
 
@@ -219,7 +224,7 @@ module LOWDER
 
                 t = choose_index_trsbox(model, Δ, x)
 
-                it_flag = 2
+                it_flag = :trust_region
                 nρ = 0
 
             else
@@ -233,11 +238,11 @@ module LOWDER
 
                 if altmov_flag
 
-                    it_flag = 3
+                    it_flag = :altmov
 
                 else
 
-                    it_flag = 4
+                    it_flag = :altmov_cauchy
 
                 end
 
@@ -250,19 +255,19 @@ module LOWDER
             # Verifies if 'nit' exceeds 'maxit', or if 'nf' exceeds 'maxfun'. 
             if nit ≥ maxit
 
-                exit_flag = -1
+                exit_flag = :max_iterations
                 break
 
             elseif nf ≥ maxfun
 
-                exit_flag = -2
+                exit_flag = :max_evaluations
                 break
 
             else
 
                 if verbose ≥ 1
 
-                    print_iteration( full_calc, it_flag, nit, nf, model.imin[], δold, Δold, model.fval[ model.kopt[] + 1 ], model.xopt)
+                    print_iteration(it_flag, full_calc, nit, nf, model.imin[], δold, Δold, ρ, pred_red, real_red, model.fval[ model.kopt[] + 1 ], model.xopt, d)
 
                 end
 
@@ -334,7 +339,7 @@ module LOWDER
 
         #---------------------- Preparations to finish execution  ----------------------
 
-        if ( it_flag == 0 ) || ( it_flag == 1 )
+        if ( it_flag == :nonspecified ) || ( it_flag == :criticality )
 
             verif_new_info = false
 
@@ -348,10 +353,10 @@ module LOWDER
         end
         
         # Creates the LOWDEROutput.
-        output = create_output(model, nit, nf, exit_flag, full_calc)
+        output = create_output(model, exit_flag, full_calc, nit, nf)
 
         # Prints information about the iteration, exit flag and LOWDEROutput.
-        print_info(model, output, false, verbose, exit_flag, it_flag, nit, nf, δ, Δ)
+        print_info(model, output, exit_flag, it_flag, verbose, nit, nf, δ, Δ, full_calc, pred_red, real_red, ρ, d)
         
         return output
 

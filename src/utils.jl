@@ -183,14 +183,15 @@ end
 function relative_reduction(
                             model::AbstractModel,
                             func_list::Array{Function, 1},
-                            diff::Float64,
+                            pred_red::Float64,
                             y::Vector{Float64}
                             )
 
     f_y = fi_eval(func_list, model.imin[], y)
-    ρ = ( model.fval[model.kopt[] + 1] - f_y ) / ( diff )
+    real_red = model.fval[model.kopt[] + 1] - f_y
+    ρ = ( real_red ) / ( pred_red )
 
-    return ρ, f_y, model.imin[]
+    return ρ, real_red, f_y, model.imin[]
 
 end
 
@@ -198,15 +199,16 @@ function relative_reduction!(
                             model::AbstractModel,
                             func_list::Array{Function, 1},
                             r::Int64,
-                            diff::Float64,
+                            pred_red::Float64,
                             y::Vector{Float64},
                             imin_set::Vector{Bool}
                             )
 
     fmin_y, idx_y = fmin_eval!(func_list, r, y, imin_set)
-    ρ = ( model.fval[model.kopt[] + 1] - fmin_y ) / ( diff )
+    real_red = model.fval[model.kopt[] + 1] - fmin_y
+    ρ = ( real_red ) / ( pred_red )
 
-    return ρ, fmin_y, idx_y
+    return ρ, real_red, fmin_y, idx_y
 
 end
 
@@ -220,30 +222,30 @@ Prints information about the exit flag.
 
 """
 function print_warning(
-                        flag::Int64
+                        exit_flag::Symbol
                         )
 
-    if flag == 1
+    if exit_flag == :success
 
         printstyled("Success: ", bold=true, color=:light_green)
         println("The algorithm succeeded.")
 
-    elseif flag == -1
+    elseif exit_flag == :max_iterations
 
         printstyled("Warning: ", bold=true, color=:light_red)
         println("The maximum number of iterations has been reached.")
 
-    elseif flag == -2
+    elseif exit_flag == :max_evaluations
 
         printstyled("Warning: ", bold=true, color=:light_red)
         println("The maximum number of function evaluations has been reached.")
 
-    elseif flag == -3
+    elseif exit_flag == :nondescent
 
         printstyled("Warning: ", bold=true, color=:light_red)
-        println("The calculated direction is not downhill for the model.")
+        println("The calculated direction is not descent for the model.")
 
-    elseif flag == -11
+    elseif exit_flag == :better_point
 
         printstyled("Notice: ", bold=true, color=:light_yellow)
         println("A better value will be obtained when evaluating the function on 'xopt'.")
@@ -254,6 +256,7 @@ function print_warning(
         println("Exit flag not specified.")
 
     end
+    println("--------------------------------------------------------------------------------")
 
 end
 
@@ -278,10 +281,9 @@ Prints information about the iteration status.
    
 """
 function print_iteration(
-                            full_calc::Bool,
-                            flag::Int64,
-                            countit::Int64,
-                            countf::Int64,
+                            it_flag::Symbol,
+                            nit::Int64,
+                            nf::Int64,
                             imin_idx::Int64,
                             δ::Float64,
                             Δ::Float64,
@@ -289,44 +291,61 @@ function print_iteration(
                             xopt::Vector{Float64}
                             )
         
-    if flag == 1
-
-        it_type = "criticality"
-
-    elseif flag == 2
-
-        it_type = "trust-region"
-
-    elseif flag == 3
-
-        it_type = "altmov"
-
-    elseif flag == 4
-
-        it_type = "altmov-cauchy"
-
-    else
-
-        it_type = "not especified"
-
-    end
-
-    if countit == 0
+    if nit == 0
 
         println("--------------------------------------------------------------------------------")
         println("--------------------------------------------------------------------------------")
 
     end
 
-    println("Iteration  : $(countit)")
-    println("Func. eval.: $(countf)")
-    println("δ          : $(δ)")
-    println("Δ          : $(Δ)")
-    println("It. type   : $(it_type)")
-    println("I_min index: $(imin_idx)")
-    println("Best point : $(xopt)")
-    println("Func. val. : $(fopt)")
-    println("Full ρ     : $(full_calc)")
+    println("Iteration    : $(nit)")
+    println("Func. eval.  : $(nf)")
+    println("δ            : $(δ)")
+    println("Δ            : $(Δ)")
+    println("I_min index  : $(imin_idx)")
+    println("Best point   : $(xopt)")
+    println("Func. val.   : $(fopt)")
+    println("Iter. type   : $(it_flag)")
+    println("--------------------------------------------------------------------------------")
+
+end
+
+function print_iteration(
+                            it_flag::Symbol,
+                            full_calc::Bool,
+                            nit::Int64,
+                            nf::Int64,
+                            imin_idx::Int64,
+                            δ::Float64,
+                            Δ::Float64,
+                            ρ::Float64,
+                            pred_red::Float64,
+                            real_red::Float64,
+                            fopt::Float64,
+                            xopt::Vector{Float64},
+                            d::Vector{Float64}
+                            )
+        
+    if nit == 0
+
+        println("--------------------------------------------------------------------------------")
+        println("--------------------------------------------------------------------------------")
+
+    end
+
+    println("Iteration    : $(nit)")
+    println("Func. eval.  : $(nf)")
+    println("δ            : $(δ)")
+    println("Δ            : $(Δ)")
+    println("I_min index  : $(imin_idx)")
+    println("Best point   : $(xopt)")
+    println("Func. val.   : $(fopt)")
+    println("Iter. type   : $(it_flag)")
+    println("Direction d  : $(d)")
+    println("Full ρ       : $(full_calc)")
+    println("Rel. reduc. ρ: $(ρ)")
+    println("Pred. reduc. : $(pred_red)")
+    println("Real reduc.  : $(real_red)")
     println("--------------------------------------------------------------------------------")
 
 end
@@ -334,19 +353,31 @@ end
 function print_info(
                     model::AbstractModel,
                     output::LOWDEROutput,
-                    full_calc::Bool,
+                    exit_flag::Symbol,
+                    it_flag::Symbol,
                     verbose::Int64,
-                    exit_flag::Int64,
-                    it_flag::Int64,
-                    countit::Int64,
-                    countf::Int64,
+                    nit::Int64,
+                    nf::Int64,
                     δ::Float64,
-                    Δ::Float64
+                    Δ::Float64,
+                    full_calc::Bool,
+                    pred_red::Float64,
+                    real_red::Float64,
+                    ρ::Float64,
+                    d::Vector{Float64}
                     )
     
     if verbose != 0
 
-        print_iteration( full_calc, it_flag, countit, countf, model.imin[], δ, Δ, model.fval[model.kopt[]], model.xopt)
+        if it_flag == :nonspecified
+
+            print_iteration(it_flag, nit, nf, model.imin[], δ, Δ, model.fval[model.kopt[] + 1], model.xopt)
+        
+        else
+
+            print_iteration(it_flag, full_calc, nit, nf, model.imin[], δ, Δ, ρ, pred_red, real_red, model.fval[model.kopt[] + 1], model.xopt, d)
+
+        end
 
         if verbose ≥ 2
 
@@ -354,7 +385,7 @@ function print_info(
 
             if model.kopt[] != 0
 
-                print_warning(-11)
+                print_warning(:better_point)
 
             end
 

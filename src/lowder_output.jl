@@ -4,19 +4,19 @@
 
 function create_output(
                         model::AbstractModel,
+                        exit_flag::Symbol,
+                        full_calc::Bool,
                         nit::Int64,
-                        nf::Int64,
-                        exit_flag::Int64,
-                        full_calc::Bool
+                        nf::Int64
                         )
 
     if ( model.kopt[] == 0 ) || ( full_calc )
 
-        return LOWDEROutput(nit, model.imin[], nf, exit_flag, true, model.fval[1], model.xopt)
+        return LOWDEROutput(exit_flag, true, nit, nf, model.imin[], model.fval[1], model.xopt)
 
     else
 
-        return LOWDEROutput(nit, model.imin[], nf, exit_flag, false, model.fval[ model.kopt[] + 1 ], model.xopt)
+        return LOWDEROutput(exit_flag, false, nit, nf, model.imin[], model.fval[ model.kopt[] + 1 ], model.xopt)
 
     end
 
