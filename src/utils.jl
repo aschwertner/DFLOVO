@@ -431,3 +431,98 @@ function projection_active_set!(
     end
 
 end
+
+function solve_quadratic!(a, b, c, roots)
+
+    if iszero(a)
+
+        root = - c / b
+
+        if !( isinf(root) )
+
+            append!(roots, root)
+
+        elseif ( iszero(b) ) && ( iszero(c) )
+
+            append!(roots, 0.0)
+
+        else
+
+            append!(roots, NaN)
+
+        end
+
+    else
+
+        b = b / a
+        c = c / a
+
+        if iszero(c)
+
+            append!(roots, 0.0)
+            append!(roots, -b)
+
+        else
+
+            Δ = b ^ 2.0 - 4.0 * c
+
+            if isinf(Δ)
+
+                root_1 = -b
+                root_2 = c / root_1
+
+                if isinf(root_2)
+
+                    append!(roots, root_1)
+
+                else
+
+                    append!(roots, root_1)
+                    append!(roots, root_2)
+                
+                end
+
+            else
+
+                if Δ < 0.0
+
+                    append!(roots, NaN)
+
+                elseif Δ == 0.0
+
+                    append!(roots, - 0.5 * b)
+
+                else
+                    
+                    if b < 0.0
+                    
+                        root_1 = 0.5 * ( -b + sqrt(Δ) )
+
+                    else
+
+                        root_1 = 0.5 * ( - b - sqrt(Δ) )
+
+                    end
+
+                    root_2 = c / root_1
+
+                    if isinf(root_2)
+
+                        append!(roots, root_1)
+
+                    else
+
+                        append!(roots, root_1)
+                        append!(roots, root_2)
+                
+                    end
+
+                end
+
+            end
+
+        end
+
+    end
+
+end
