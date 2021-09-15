@@ -481,11 +481,11 @@ function compute_alpha_linear(Δ, a, b, x, d, s)
 
         if α == α_Δ 
 
-            return α, 1, 0
+            return α, true, 0
 
         else
 
-            return α, 2, idx
+            return α, false, idx
 
         end
 
