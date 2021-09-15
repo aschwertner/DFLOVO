@@ -731,3 +731,17 @@ function cond_θB(θ, a, b, xopt, d, proj_d, s)
     return true
 
 end
+
+function cond_θQ_linear(θ, gTd, gTpd, gTs)
+
+    if ( gTd - gTpd + cos(θ) * gTpd + sin(θ) * gTs ) < 0.0
+
+        return true
+
+    else
+
+        return false
+
+    end
+
+end
