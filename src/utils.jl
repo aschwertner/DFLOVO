@@ -463,9 +463,9 @@ function compute_alpha_linear(Δ, a, b, x, d, s)
 
     # Computes α_Δ, the largest number such that ||'d' + 'α'*'s'|| ≤ 'Δ'.
 
-    a_2 = norm(s)
+    a_2 = dot(s, s)
     a_1 = 2.0 * dot(d, s)
-    a_0 = norm(d) - Δ ^ 2.0
+    a_0 = dot(d, d) - Δ ^ 2.0
 
     solve_quadratic!(a_2, a_1, a_0, roots)
 
@@ -486,6 +486,84 @@ function compute_alpha_linear(Δ, a, b, x, d, s)
         else
 
             return α, 2, idx
+
+        end
+
+    end
+
+end
+
+function new_search_direction!(pdTpd, pdTpg, pgTpg, proj_d, proj_grad)
+
+    roots = []
+    α = 0.0
+    β = 0.0
+
+    if iszero( pdTpg )
+
+        # If P_{I}(d)'P_{I}(∇model(xk+d)) = 0, then the new direction is a multiple of P_{I}(∇Q(xk+d)).
+
+        solve_quadratic!( pgTpg, 0.0, pdTpd, roots)
+
+        β = minimum(roots)
+
+        if ( β == NaN ) || ( β > 0.0 )
+
+            @. proj_grad = 0.0
+        
+        else
+
+            @. proj_grad *= β
+
+        end
+
+    else
+
+        # Otherwise, the new search direction is a linear combination of P_{I}(d) and P_{I}(∇model(xk+d)).
+
+        aux = ( pdTpd ^ 2.0 * pgTpg ) / pdTpg ^ 2.0 - pdTpd
+
+        solve_quadratic!( aux, 0.0, - pdTpd, roots )
+
+        α = maximum(roots)
+
+        if ( α == NaN ) || ( iszero( α * pdTpd ) )
+
+            @. proj_grad = 0.0
+
+        else
+
+            β = - pgTpg / ( α * pdTpd )
+
+            if ( α * pdTpg + β * pgTpg ) < 0.0
+
+                @. proj_grad = α * proj_d + β * proj_grad
+
+            else
+
+                α = minimum(roots)
+
+                if ( α == NaN ) || ( iszero( α * pdTpd ) )
+
+                    @. proj_grad = 0.0
+        
+                else
+
+                    β = - pgTpg / ( α * pdTpd )
+
+                    if ( α * pdTpg + β * pgTpg ) < 0.0
+
+                        @. proj_grad = α * proj_d + β * proj_grad
+        
+                    else
+
+                        @. proj_grad = 0.0
+
+                    end
+
+                end
+
+            end
 
         end
 
