@@ -713,3 +713,21 @@ function binary_search(lower_value, upper_value, stop_condition, ε)
     end
 
 end
+
+function cond_θB(θ, a, b, xopt, d, proj_d, s)
+
+    for i=1:length(a)
+
+        xnewi = xopt[i] + d[i] - proj_d[i] + cos(θ) * proj_d[i] + sin(θ) * s[i]
+
+        if ( xnewi < a[i] ) || ( xnewi > b[i] )
+
+            return false
+
+        end
+
+    end
+
+    return true
+
+end
