@@ -103,26 +103,30 @@ function fmin_partial_eval!(
 
     for i = 1:r
 
-        if i != idx
+        if i == idx
+
+            tmp = fi_y
+        
+        else
 
             tmp = func_list[i](y)
 
-            if tmp < fmin_y
+        end
 
-                fmin_y = tmp
-                imin_y = i
-                imin_set[1:(i - 1)] .= false
-                imin_set[i] = true
+        if tmp < fmin_y
 
-            elseif tmp == fmin_y
+            fmin_y = tmp
+            imin_y = i
+            imin_set[1:(i - 1)] .= false
+            imin_set[i] = true
 
-                imin_set[i] = true
+        elseif tmp == fmin_y
 
-            else
+            imin_set[i] = true
 
-                imin_set[i] = false
+        else
 
-            end
+            imin_set[i] = false
 
         end
 
