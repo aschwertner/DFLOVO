@@ -434,164 +434,121 @@ end
 
 function compute_active_set!(
                         model::LinearModel,
-                        ao::Vector{Float64},
-                        bo::Vector{Float64},
+                        a::Vector{Float64},
+                        b::Vector{Float64},
                         active_set::Vector{Bool}
                         )
 
-    if model.kopt[] == 0
+    for i=1:model.n
 
-        for i=1:model.n
+        if ( model.xopt[i] == a[i] && model.g[i] ≥ 0.0 ) || ( model.xopt[i] == b[i] && model.g[i] ≤ 0.0 )
 
-            if ( ao[i] == 0.0 && model.g[i] >= 0.0 ) || ( bo[i] == 0.0 && model.g[i] <= 0.0 )
-
-                active_set[i] = true
-
-            else
-            
-                active_set[i] = false
-
-            end
-
-        end
-
-    else
-
-        for i=1:model.n
-
-            if ( model.Y[ model.kopt[], i] == ao[i] && model.g[i] >= 0.0 ) || ( model.Y[ model.kopt[], i] == bo[i] && model.g[i] <= 0.0 )
-
-                active_set[i] = true
-
-            else
-            
-                active_set[i] = false
-
-            end
-
-        end
-
-    end
-
-end
-
-function old_trsbox!(
-                    model::LinearModel,
-                    Δ::Float64,
-                    ao::Vector{Float64},
-                    bo::Vector{Float64},
-                    active_set::Vector{Bool},
-                    x::Vector{Float64},
-                    d::Vector{Float64}
-                    )
-    
-    # Copies the shifted vector 'xopt' to 'x'.
-    if model.kopt[] == 0
-
-        @. x = 0.0
-
-    else
-
-        copyto!(x, model.Y[ model.kopt[], : ])
-
-    end
-
-    # Creates the active constraint vector 'active_set'.
-    compute_active_set!(model, ao, bo, active_set)
-
-    # Computes the symmetric vector of the projection of the 
-    # gradient of the model by the set of active constraints.
-    projection_active_set!(model.g, active_set, d, sym = true)
-
-    # If the set of active constraints is not complete,
-    # calculates step 'd' and updates point 'x'.
-    if sum(active_set) != model.n
-
-        α = Inf
-        α_B = Inf
-        α_Δ = Δ / norm(d)
-
-        for i=1:model.n
-
-            if d[i] > 0.0
-
-                α = ( bo[i] - model.Y[model.kopt[], i] ) / d[i]
-
-            elseif d[i] < 0.0
-
-                α = ( ao[i] - model.Y[model.kopt[], i] ) / d[i]
-
-            end
-
-            if α < α_B
-
-                α_B = α
-
-            end
-
-        end
-
-        if α_Δ ≤ α_B
-
-            @. d *= α_Δ
+            active_set[i] = true
 
         else
-
-            @. d *= α_B
+            
+            active_set[i] = false
 
         end
 
-        @. x += d
-
     end
-    
+
 end
 
 function trsbox!(
                     model::LinearModel,
                     Δ::Float64,
-                    ao::Vector{Float64},
-                    bo::Vector{Float64},
+                    a::Vector{Float64},
+                    b::Vector{Float64},
                     active_set::Vector{Bool},
                     x::Vector{Float64},
-                    d::Vector{Float64}
+                    d::Vector{Float64},
+                    s::Vector{Float}
                     )
-    
-    # Copies the vector 'xopt' to 'x'.
-    copyto!(x, model.xopt)
+
+    # Copies vector 'xopt' to 'x' and sets vectors 'd' and 's' to zero.
+    for i = 1:model.n
+
+        x[i] = model.xopt[i]
+        d[i] = 0.0
+        s[i] = 0.0
+
+    end
+
+    # Saves the best function value so far.
+    fopt = model.fval[ model.kopt[] + 1 ]
 
     # Creates the active constraint vector 'active_set'.
-    compute_active_set!(model, ao, bo, active_set)
+    compute_active_set!(model, a, b, active_set)
 
-    # Computes the symmetric vector of the projection of the 
-    # gradient of the model by the set of active constraints.
-    projection_active_set!(model.g, active_set, d, sym = true)
+    # If the set of active constraints is full, 'd' is returned as the null vector.
+    if sum(active_set) == model.n
 
-    # If the set of active constraints is not complete,
-    # calculates step 'd' and updates point 'x'.
-    if sum(active_set) != model.n
+        return :full_active_set
+    
+    end
 
-        α = Inf
-        α_B = Inf
-        α_Δ = Δ / norm(d)
+    # Computes the symmetric vector of the projection of the gradient of the model 
+    # by the set of active constraints and stores in 's'.
+    projection_active_set!(model.g, active_set, s, sym = true)
 
-        if model.kopt[] == 0
+    # If 's' is a null vector, we won't get any decreases in that direction.
+    # Therefore, 'd' is returned as the null vector.
+    if iszero( norm(s) )
 
-            for i=1:model.n
+        return :null_search_direction
 
-                if d[i] > 0.0
+    end
 
-                    α = bo[i] / d[i]
+    while true
 
-                elseif d[i] < 0.0
+        # Computes the step 'α' along the direction 's'.
+        α, idx_α, idx_B = compute_alpha_linear(Δ, a, b, x, d, s)
 
-                    α = ao[i] / d[i]
+        # Updates the search direction 'd'.
+        @. d += α * s
 
-                end
+        if idx_α == 1
 
-                if α < α_B
+            # If the trust-region boundary has been reached (case 'α' = 'α_Δ'),
+            # prepares for an auxiliary procedure that tries to increase the reduction
+            # of the obtained model value.
 
-                    α_B = α
+            while true
+
+                # Uses 'x' as work vector to store projection of direction 'd' by a set of active constraints 'active_set'.
+                projection_active_set!(d, active_set, x)
+
+                # Computes P_{I}(∇model(xopt+d)) = P_{I}('model.g') and stores in 's'.
+                projection_active_set!(model.g, active_set, s)
+
+                pdTpd = dot( x, x )
+                pdTpg = dot( x, s )
+                pgTpg = dot( s, s )
+
+                # Tests the stopping criteria.
+                if ( pdTpd * pgTpg - pdTpg ^ 2.0 ) ≤ 1.0e-4 * ( fopt - model.c - dot( model.g, model.xopt ) - dot( model.g, d ) )
+
+                    @. x = model.xopt + d
+
+                    return :trust_region_boundary
+
+                else
+
+                    new_search_direction!(pdTpd, pdTpg, pgTpg, x, s)
+
+                    if iszero( norm(s) )
+
+                        @. x = model.xopt + d
+            
+                        return :null_new_search_direction
+                
+                    end
+
+                    ### Terminar
+                    
+
+
 
                 end
 
@@ -599,39 +556,48 @@ function trsbox!(
 
         else
 
-            for i=1:model.n
+            # Otherwise, the current line search is restricted by a bound constraint. If the stooping criteria is true, the computational effort
+            # to perform a new iteration is not promising and the procedure is terminated.
 
-                if d[i] > 0.0
+            # Computes - P_{I}(∇model(xopt+d)) = - P_{I}('model.g') ans stores in 's'.
+            projection_active_set!(model.g, active_set, s, sym = true)
 
-                    α = ( bo[i] - model.Y[model.kopt[], i] ) / d[i]
+            # Verifies the stopping criteria.
+            if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c - dot( model.g, x ) - dot( model.g, d ) )
 
-                elseif d[i] < 0.0
+                @. x += d
+                
+                return :bound_constraint
 
-                    α = ( ao[i] - model.Y[model.kopt[], i] ) / d[i]
+            else
 
-                end
+                # Adds the index of the achieved bound constraint to 'active_set',
+                # and updates 's' to be the symmetric projection of 'model.g' in the new set.
 
-                if α < α_B
-
-                    α_B = α
-
-                end
-
+                active_set[ idx_B ] = true
+                s[ idx_B ] = 0.0
+                
             end
 
         end
 
-        if α_Δ ≤ α_B
+        # If the set of active constraints is full, the procedure terminates.
+        if sum(active_set) == model.n
 
-            @. d *= α_Δ
+            @. x += d
 
-        else
-
-            @. d *= α_B
-
+            return :full_active_set
+    
         end
 
-        @. x += d
+        # If the direction 's' is null, the procedure also terminates.
+        if iszero( norm(s) )
+
+            @. x += d
+
+            return :null_search_direction
+    
+        end
 
     end
     
