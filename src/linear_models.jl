@@ -463,7 +463,7 @@ function trsbox!(
                     active_set::Vector{Bool},
                     x::Vector{Float64},
                     d::Vector{Float64},
-                    s::Vector{Float}
+                    s::Vector{Float64}
                     )
 
     # Copies vector 'xopt' to 'x' and sets vectors 'd' and 's' to zero.
@@ -503,12 +503,12 @@ function trsbox!(
     while true
 
         # Computes the step 'α' along the direction 's'.
-        α, idx_α, idx_B = compute_alpha_linear(Δ, a, b, x, d, s)
+        α, chose_αΔ, idx_B = compute_alpha_linear(Δ, a, b, x, d, s)
 
         # Updates the search direction 'd'.
         @. d += α * s
 
-        if idx_α == 1
+        if chose_αΔ
 
             # If the trust-region boundary has been reached (case 'α' = 'α_Δ'),
             # prepares for an auxiliary procedure that tries to increase the reduction
@@ -535,8 +535,13 @@ function trsbox!(
 
                 else
 
+                    # Otherwise, computes a new search direction 's', spanned by P_{I}(d) and P_{I}(∇model(xopt+d)),
+                    # that satisfies ||s|| = ||P_{I}(d)||, s'P_{I}(d) = 0, and s'P_{I}(∇model(xopt+d)) < 0.0.
+                    # Note that 'x' stores P_{I}(d) and 's' stores P_{I}(∇model(xopt+d)).
+                    # After the call of 'new_search_direction', the desired direction is allocated in 's'.
                     new_search_direction!(pdTpd, pdTpg, pgTpg, x, s)
 
+                    # Verifies if the direction 's' is null.
                     if iszero( norm(s) )
 
                         @. x = model.xopt + d
@@ -545,10 +550,39 @@ function trsbox!(
                 
                     end
 
-                    ### Terminar
+                    # Computes the parameter θ that satisfies a ≤ xopt + d(θ) ≤ b, and g'd(θ) < 0.0.
+                    # Note that the vector 's' holds d(θ) - d.
+                    chose_θQ = conpute_theta_linear!(model, a, b, d, x, s)
+
+                    if iszero( norm(s) )
+
+                        @. x = model.xopt + d
+
+                        return :null_angle_search_direction
+
+                    end
+
+                    # Updates the direction 'd' to be d(θ).
+                    @. d += s
+
+                    # Updates 'index_set' with indices for which xopt + d is restricted by one of the bounds on the variables.
+                    update_active_set!( a, b, model.xopt, d, active_set )
                     
+                    if chose_θQ
 
+                        # Computes P_{I}(∇model(xopt+d)) = P_{I}('model.g') and stores in 's'.
+                        projection_active_set!(model.g, active_set, s)
 
+                        # Verifies the stopping criteria.
+                        if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c - dot( model.g, model.xopt ) - dot( model.g, d ) )
+
+                            @. x = model.xopt + d
+
+                            return :tired_trust_region
+
+                        end
+
+                    end
 
                 end
 
@@ -559,7 +593,7 @@ function trsbox!(
             # Otherwise, the current line search is restricted by a bound constraint. If the stooping criteria is true, the computational effort
             # to perform a new iteration is not promising and the procedure is terminated.
 
-            # Computes - P_{I}(∇model(xopt+d)) = - P_{I}('model.g') ans stores in 's'.
+            # Computes - P_{I}(∇model(xopt+d)) = - P_{I}('model.g') and stores in 's'.
             projection_active_set!(model.g, active_set, s, sym = true)
 
             # Verifies the stopping criteria.
@@ -567,7 +601,7 @@ function trsbox!(
 
                 @. x += d
                 
-                return :bound_constraint
+                return :tired_bound_constraint
 
             else
 
@@ -596,7 +630,7 @@ function trsbox!(
             @. x += d
 
             return :null_search_direction
-    
+        
         end
 
     end
