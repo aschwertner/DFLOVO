@@ -665,3 +665,51 @@ function solve_quadratic!(a, b, c, roots)
     end
 
 end
+
+function binary_search(lower_value, upper_value, stop_condition, ε)
+
+    if !( stop_condition(lower_value) )
+
+        return NaN
+
+    elseif stop_condition(upper_value)
+
+        return upper_value
+
+    else
+
+        while true
+
+            mean_value = (lower_value + upper_value) / 2.0
+
+            if stop_condition(mean_value)
+
+                if (upper_value - mean_value) ≤ ε
+
+                    return mean_value
+
+                else
+
+                    lower_value = mean_value
+
+                end
+
+            else
+
+                if (mean_value - lower_value) ≤ ε
+
+                    return lower_value
+
+                else
+
+                    upper_value = mean_value
+
+                end
+                
+            end
+
+        end
+
+    end
+
+end
