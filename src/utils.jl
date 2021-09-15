@@ -746,7 +746,7 @@ function cond_θQ_linear(θ, gTd, gTpd, gTs)
 
 end
 
-function conpute_theta_linear(model, a, b, d, proj_d, s)
+function conpute_theta_linear!(model, a, b, d, proj_d, s)
 
     cond_B(θ) = cond_θB(θ, a, b, model.xopt, d, proj_d, s)
 
@@ -783,6 +783,26 @@ function conpute_theta_linear(model, a, b, d, proj_d, s)
             else
 
                 return false
+
+            end
+
+        end
+
+    end
+
+end
+
+function update_active_set!( a, b, xopt, d, active_set )
+
+    for i=1:length(a)
+
+        if !( active_set[i] )
+            
+            xnewi = xopt[i] + d[i]
+
+            if ( a[i] == xnewi ) || ( xnewi == b[i] )
+
+                active_set[i] == true
 
             end
 
