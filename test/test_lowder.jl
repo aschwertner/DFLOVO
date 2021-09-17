@@ -26,7 +26,7 @@
         sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ, m = 3)
 
         @test(sol.status == :success)
-        @test(sol.solution == [0.0, 5.0])
+        @test( ( sol.index == 1 && sol.solution == [0.0, 5.0] ) || ( sol.index == 2 && sol.solution == [5.0, 0.0] ))
         
     end
 
