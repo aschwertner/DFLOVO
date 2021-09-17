@@ -527,7 +527,7 @@ function trsbox!(
                 pgTpg = dot( s, s )
 
                 # Tests the stopping criteria.
-                if ( pdTpd * pgTpg - pdTpg ^ 2.0 ) ≤ 1.0e-4 * ( fopt - model.c - dot( model.g, model.xopt ) - dot( model.g, d ) )
+                if ( pdTpd * pgTpg - pdTpg ^ 2.0 ) ≤ 1.0e-4 * ( fopt - model.c[] - dot( model.g, model.xopt ) - dot( model.g, d ) )
 
                     @. x = model.xopt + d
 
@@ -574,7 +574,7 @@ function trsbox!(
                         projection_active_set!(model.g, active_set, s)
 
                         # Verifies the stopping criteria.
-                        if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c - dot( model.g, model.xopt ) - dot( model.g, d ) )
+                        if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c[] - dot( model.g, model.xopt ) - dot( model.g, d ) )
 
                             @. x = model.xopt + d
 
@@ -597,7 +597,7 @@ function trsbox!(
             projection_active_set!(model.g, active_set, s, sym = true)
 
             # Verifies the stopping criteria.
-            if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c - dot( model.g, x ) - dot( model.g, d ) )
+            if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c[] - dot( model.g, x ) - dot( model.g, d ) )
 
                 @. x += d
                 
