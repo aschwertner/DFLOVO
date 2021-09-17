@@ -83,6 +83,7 @@ module LOWDER
         ao = zeros(Float64, n)      # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(Float64, n)      # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
         d = zeros(Float64, n)       # TRSBOX or ALTMOV direction.
+        aux_vec = zeros(Float64, n) # Auxiliar vector for workspace.
         active_set = zeros(Bool, n) # Set of active constraints.
         imin_set = zeros(Bool, r)   # Set I_{min}(x)
         full_calc = false
@@ -170,7 +171,8 @@ module LOWDER
 
                 #------------------------------- Step calculation ------------------------------
 
-                trsbox!(model, Δ, ao, bo, active_set, x, d)
+                status = trsbox!(model, Δ, a, b, active_set, x, d, aux_vec)
+                printstyled("TRSBOX status: $(status)", bold=true, color=:light_red)
 
                 #------------------------------- Step acceptance -------------------------------
 
