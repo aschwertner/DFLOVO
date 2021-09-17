@@ -442,13 +442,13 @@ function compute_alpha_linear(Δ, a, b, x, d, s)
     # Computes α_B, the largest number such that 'a' ≤ 'x' + 'd' + 'α'*'s' ≤ 'b'.
     for j=1:length(x)
 
-        if s[i] < 0.0
+        if s[j] < 0.0
 
-            α_j = ( a[i] - x[i] - d[i] ) / s[i]
+            α_j = ( a[j] - x[j] - d[j] ) / s[j]
 
-        elseif s[i] > 0.0
+        elseif s[j] > 0.0
 
-            α_j = ( b[i] - x[i] - d[i] ) / s[i]
+            α_j = ( b[j] - x[j] - d[j] ) / s[j]
 
         end
 
