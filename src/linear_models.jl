@@ -552,7 +552,7 @@ function trsbox!(
 
                     # Computes the parameter θ that satisfies a ≤ xopt + d(θ) ≤ b, and g'd(θ) < 0.0.
                     # Note that the vector 's' holds d(θ) - d.
-                    chose_θQ = conpute_theta_linear!(model, a, b, d, x, s)
+                    chose_θQ = compute_theta_linear!(model, a, b, d, x, s)
 
                     if iszero( norm(s) )
 

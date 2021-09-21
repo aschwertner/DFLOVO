@@ -746,7 +746,7 @@ function cond_θQ_linear(θ, gTd, gTpd, gTs)
 
 end
 
-function conpute_theta_linear!(model, a, b, d, proj_d, s)
+function compute_theta_linear!(model, a, b, d, proj_d, s)
 
     cond_B(θ) = cond_θB(θ, a, b, model.xopt, d, proj_d, s)
 
