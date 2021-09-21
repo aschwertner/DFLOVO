@@ -340,4 +340,37 @@
 
     end
 
+    @testset "altmov" begin
+
+        # Model specifications
+        model = LinearModel(2)
+        model.c[] = 0.0
+        model.g .= [1.0, 2.0]
+        model.kopt[] = 0
+        model.xbase .= zeros(Float64, 2)
+        model.xopt .= zeros(Float64, 2)
+        model.Y .= Matrix{Float64}(I, 2, 2)
+        model.dst .= [1.0, 1.0]
+
+        # Box constraints
+        l = [-5.0, 10.0]
+        u = [20.0, 15.0]
+
+        # Trust-region
+        Δ = 2.0
+
+        # Test specifications
+        idx_t = 1
+
+        active_set = zeros(Bool, 2)
+        x = zeros(Float64, 2)
+        d = zeros(Float64, 2)
+
+        status = LOWDER.altmov!(model, idx_t, Δ, l, u, x, d, active_set)
+        @test( x == [2.0, 0.0] )
+        @test( d == [2.0, 0.0] )
+        @test( status == true )
+
+    end
+
 end
