@@ -499,7 +499,7 @@ function new_search_direction!(pdTpd, pdTpg, pgTpg, proj_d, proj_grad)
     α = 0.0
     β = 0.0
 
-    if iszero( pdTpg )
+    if pdTpg ≈ 0.0
 
         # If P_{I}(d)'P_{I}(∇model(xk+d)) = 0, then the new direction is a multiple of P_{I}(∇Q(xk+d)).
 
@@ -527,7 +527,7 @@ function new_search_direction!(pdTpd, pdTpg, pgTpg, proj_d, proj_grad)
 
         α = maximum(roots)
 
-        if ( α == NaN ) || ( iszero( α * pdTpd ) )
+        if ( α == NaN ) || ( α * pdTpd ≈ 0.0 )
 
             @. proj_grad = 0.0
 
@@ -543,7 +543,7 @@ function new_search_direction!(pdTpd, pdTpg, pgTpg, proj_d, proj_grad)
 
                 α = minimum(roots)
 
-                if ( α == NaN ) || ( iszero( α * pdTpd ) )
+                if ( α == NaN ) || ( α * pdTpd ≈ 0.0 )
 
                     @. proj_grad = 0.0
         
