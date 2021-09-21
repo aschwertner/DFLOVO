@@ -189,7 +189,7 @@ function relative_reduction(
 
     f_y = fi_eval(func_list, model.imin[], y)
     real_red = model.fval[model.kopt[] + 1] - f_y
-    ρ = ( real_red ) / ( pred_red )
+    ρ = real_red / pred_red
 
     return ρ, real_red, f_y, model.imin[]
 
@@ -206,7 +206,7 @@ function relative_reduction!(
 
     fmin_y, idx_y = fmin_eval!(func_list, r, y, imin_set)
     real_red = model.fval[model.kopt[] + 1] - fmin_y
-    ρ = ( real_red ) / ( pred_red )
+    ρ = real_red / pred_red
 
     return ρ, real_red, fmin_y, idx_y
 
@@ -260,64 +260,16 @@ function print_warning(
 
 end
 
-"""
-
-    print_iteration(countit::Int64, countf::Int64, flag::Int64, 
-                    δ::Float64, Δ::Float64, fsave::Float64)
-                            
-Prints information about the iteration status.
-
-    - 'countit': iteration count.
-
-    - 'countf': function evaluation counter.
-
-    - 'flag': iteration type flag.
-
-    - 'δ': radius of the sample set.
-
-    - 'Δ': radius of the trust-region.
-
-    - 'fsave': least value of the objective function so far.
-   
-"""
 function print_iteration(
                             it_flag::Symbol,
-                            nit::Int64,
-                            nf::Int64,
-                            imin_idx::Int64,
-                            δ::Float64,
-                            Δ::Float64,
-                            fopt::Float64,
-                            xopt::Vector{Float64}
-                            )
-        
-    if nit == 0
-
-        println("--------------------------------------------------------------------------------")
-        println("--------------------------------------------------------------------------------")
-
-    end
-
-    println("Iteration    : $(nit)")
-    println("Func. eval.  : $(nf)")
-    println("δ            : $(δ)")
-    println("Δ            : $(Δ)")
-    println("I_min index  : $(imin_idx)")
-    println("Best point   : $(xopt)")
-    println("Func. val.   : $(fopt)")
-    println("Iter. type   : $(it_flag)")
-    println("--------------------------------------------------------------------------------")
-
-end
-
-function print_iteration(
-                            it_flag::Symbol,
+                            status_flag::Symbol,
                             full_calc::Bool,
                             nit::Int64,
                             nf::Int64,
                             imin_idx::Int64,
                             δ::Float64,
                             Δ::Float64,
+                            π::Float64,
                             ρ::Float64,
                             pred_red::Float64,
                             real_red::Float64,
@@ -333,20 +285,51 @@ function print_iteration(
 
     end
 
-    println("Iteration    : $(nit)")
-    println("Func. eval.  : $(nf)")
-    println("δ            : $(δ)")
-    println("Δ            : $(Δ)")
-    println("I_min index  : $(imin_idx)")
-    println("Best point   : $(xopt)")
-    println("Func. val.   : $(fopt)")
-    println("Iter. type   : $(it_flag)")
-    println("Direction d  : $(d)")
-    println("Full ρ       : $(full_calc)")
-    println("Rel. reduc. ρ: $(ρ)")
-    println("Pred. reduc. : $(pred_red)")
-    println("Real reduc.  : $(real_red)")
-    println("--------------------------------------------------------------------------------")
+    if ( nit == 0 && it_flag == :max_evaluations )
+
+        println("Iteration     : $( nit )")
+        println("Func. eval.   : $( nf )")
+        println("Radius δ      : $( δ )")
+        println("Radius Δ      : $( Δ )")
+        println("I_min index   : $( imin_idx )")
+        println("Best point    : $( xopt )")
+        println("Func. val.    : $( fopt )")
+        println("Iter. type    : $( it_flag )")
+        println("--------------------------------------------------------------------------------")
+
+    elseif it_flag == :nonspecified
+
+        println("Iteration     : $( nit )")
+        println("Func. eval.   : $( nf )")
+        println("Radius δ      : $( δ )")
+        println("Radius Δ      : $( Δ )")
+        println("Stationarity π: $( π )")
+        println("I_min index   : $( imin_idx )")
+        println("Best point    : $( xopt )")
+        println("Func. val.    : $( fopt )")
+        println("Iter. type    : $( it_flag )")
+        println("--------------------------------------------------------------------------------")
+
+    else
+
+        println("Iteration     : $( nit )")
+        println("Func. eval.   : $( nf )")
+        println("Radius δ      : $( δ )")
+        println("Radius Δ      : $( Δ )")
+        println("Stationarity π: $( π )")
+        println("I_min index   : $( imin_idx )")
+        println("Best point    : $( xopt )")
+        println("Func. val.    : $( fopt )")
+        println("Iter. type    : $( it_flag )")
+        println("Step status   : $( status_flag )")
+        println("Direction d   : $( d )")
+        println("Full ρ        : $( full_calc )")
+        println("Rel. reduc. ρ : $( ρ )")
+        println("Pred. reduc.  : $( pred_red )")
+        println("Real reduc.   : $( real_red )")
+        println("--------------------------------------------------------------------------------")
+
+    end
 
 end
 
@@ -355,11 +338,13 @@ function print_info(
                     output::LOWDEROutput,
                     exit_flag::Symbol,
                     it_flag::Symbol,
+                    status_flag::Symbol,
                     verbose::Int64,
                     nit::Int64,
                     nf::Int64,
                     δ::Float64,
                     Δ::Float64,
+                    π::Float64,
                     full_calc::Bool,
                     pred_red::Float64,
                     real_red::Float64,
@@ -369,15 +354,7 @@ function print_info(
     
     if verbose != 0
 
-        if it_flag == :nonspecified
-
-            print_iteration(it_flag, nit, nf, model.imin[], δ, Δ, model.fval[model.kopt[] + 1], model.xopt)
-        
-        else
-
-            print_iteration(it_flag, full_calc, nit, nf, model.imin[], δ, Δ, ρ, pred_red, real_red, model.fval[model.kopt[] + 1], model.xopt, d)
-
-        end
+        print_iteration(it_flag, status_flag, full_calc, nit, nf, model.imin[], δ, Δ, π, ρ, pred_red, real_red, model.fval[model.kopt[] + 1], model.xopt, d)
 
         if verbose ≥ 2
 
