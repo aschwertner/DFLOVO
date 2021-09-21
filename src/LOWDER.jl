@@ -83,7 +83,8 @@ module LOWDER
         ao = zeros(Float64, n)      # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(Float64, n)      # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
         d = zeros(Float64, n)       # TRSBOX or ALTMOV direction.
-        aux_vec = zeros(Float64, n) # Auxiliar vector for workspace.
+        aux_v = zeros(Float64, n)   # Auxiliar vector for workspace.
+        aux_w = zeros(Float64, n)   # Auxiliar vector for workspace.
         active_set = zeros(Bool, n) # Set of active constraints.
         imin_set = zeros(Bool, r)   # Set I_{min}(x)
         full_calc = false
@@ -171,7 +172,7 @@ module LOWDER
 
                 #------------------------------- Step calculation ------------------------------
 
-                status = trsbox!(model, Δ, a, b, active_set, x, d, aux_vec)
+                status = trsbox!(model, Δ, a, b, active_set, x, d, aux_v)
 
                 #------------------------------- Step acceptance -------------------------------
 
@@ -232,20 +233,20 @@ module LOWDER
 
                 t = choose_index_altmov(model)
 
-                altmov_flag = altmov!(model, t, Δ, a, b, x, d, active_set)
+                it_flag = altmov!(model, t, Δ, a, b, x, d, aux_v, aux_w, active_set)
 
                 fi_x = fi_eval( func_list, model.imin[], x)
                 nf += 1
 
-                if altmov_flag
+                #if altmov_flag
 
-                    it_flag = :altmov
+                    #it_flag = :altmov
 
-                else
+                #else
 
-                    it_flag = :altmov_cauchy
+                    #it_flag = :altmov_cauchy
 
-                end
+                #end
 
                 nρ += 1
 
