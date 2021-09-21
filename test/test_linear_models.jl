@@ -365,11 +365,13 @@
         active_set = zeros(Bool, 2)
         x = zeros(Float64, 2)
         d = zeros(Float64, 2)
+        v = zeros(Float64, 2)
+        w = zeros(Float64, 2)
 
-        status = LOWDER.altmov!(model, idx_t, Δ, l, u, x, d, active_set)
+        status = LOWDER.altmov!(model, idx_t, Δ, l, u, x, d, v, w, active_set)
         @test( x == [2.0, 0.0] )
         @test( d == [2.0, 0.0] )
-        @test( status == true )
+        @test( status == :usual_altmov )
 
     end
 
