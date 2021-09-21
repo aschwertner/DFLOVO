@@ -32,8 +32,8 @@ module LOWDER
                     nρmax::Int64=3,
                     Γmax::Int64=1,
                     verbose::Int64=0,
-                    δmin::Float64=1.0e-8,
-                    πmin::Float64=1.0e-8,
+                    δmin::Float64=1.0e-4,
+                    πmin::Float64=1.0e-4,
                     β::Float64=1.0,
                     τ1::Float64=0.6,
                     τ2::Float64=1.5,
@@ -172,7 +172,6 @@ module LOWDER
                 #------------------------------- Step calculation ------------------------------
 
                 status = trsbox!(model, Δ, a, b, active_set, x, d, aux_vec)
-                printstyled("TRSBOX status: $(status)", bold=true, color=:light_red)
 
                 #------------------------------- Step acceptance -------------------------------
 
