@@ -573,7 +573,7 @@ end
 
 function solve_quadratic!(a, b, c, roots)
 
-    if iszero(a)
+    if a ≈ 0.0
 
         root = - c / b
 
@@ -581,7 +581,7 @@ function solve_quadratic!(a, b, c, roots)
 
             append!(roots, root)
 
-        elseif ( iszero(b) ) && ( iszero(c) )
+        elseif ( b ≈ 0.0 ) && ( c ≈ 0.0 )
 
             append!(roots, 0.0)
 
@@ -596,7 +596,7 @@ function solve_quadratic!(a, b, c, roots)
         b = b / a
         c = c / a
 
-        if iszero(c)
+        if c ≈ 0.0
 
             append!(roots, 0.0)
             append!(roots, -b)
