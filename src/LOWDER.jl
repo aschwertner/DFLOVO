@@ -91,10 +91,12 @@ module LOWDER
         verif_new_info = true
         it_flag = :nonspecified
         exit_flag = :nonspecified
-        fi_x = Inf
-        pred_red = Inf
-        real_red = Inf
-        ρ = Inf
+        status_flag = :nonspecified
+        fi_x = NaN
+        pred_red = NaN
+        real_red = NaN
+        ρ = NaN
+        π = NaN
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -131,7 +133,7 @@ module LOWDER
             output = create_output(model, exit_flag, full_calc, nit, nf)
 
             # Prints information about the iteration, exit flag and LOWDEROutput.
-            print_info(model, output, exit_flag, it_flag, verbose, nit, nf, δ, Δ, false, NaN, NaN, NaN, d)
+            print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δ, Δ, π, full_calc, pred_red, real_red, ρ, d)
             
             return output
             
@@ -166,13 +168,16 @@ module LOWDER
 
                 # Update parameters
                 δ *= τ1
-                ρ = 0.0
+                ρ = NaN
+                pred_red = NaN
+                real_red = NaN
+                full_calc = false
 
             else
 
                 #------------------------------- Step calculation ------------------------------
 
-                status = trsbox!(model, Δ, a, b, active_set, x, d, aux_v)
+                status_flag = trsbox!(model, Δ, a, b, active_set, x, d, aux_v)
 
                 #------------------------------- Step acceptance -------------------------------
 
@@ -211,7 +216,7 @@ module LOWDER
                     δ *= τ1
                     Δ *= τ1
 
-                elseif ( ρ > η2 ) && ( norm(d) == Δ )
+                elseif ( ρ > η2 ) && ( norm(d) ≈ Δ )
 
                     δ *= τ2
                     Δ *= τ2
@@ -233,21 +238,17 @@ module LOWDER
 
                 t = choose_index_altmov(model)
 
-                it_flag = altmov!(model, t, Δ, a, b, x, d, aux_v, aux_w, active_set)
+                status_flag = altmov!(model, t, Δ, a, b, x, d, aux_v, aux_w, active_set)
 
                 fi_x = fi_eval( func_list, model.imin[], x)
+
+                if it_flag != :criticality
+
+                    it_flag = :altmov                    
+
+                end
+
                 nf += 1
-
-                #if altmov_flag
-
-                    #it_flag = :altmov
-
-                #else
-
-                    #it_flag = :altmov_cauchy
-
-                #end
-
                 nρ += 1
 
             end
@@ -269,7 +270,7 @@ module LOWDER
 
                 if verbose ≥ 1
 
-                    print_iteration(it_flag, full_calc, nit, nf, model.imin[], δold, Δold, ρ, pred_red, real_red, model.fval[ model.kopt[] + 1 ], model.xopt, d)
+                    print_iteration(it_flag, status_flag, full_calc, nit, nf, model.imin[], δold, Δold, π, ρ, pred_red, real_red, model.fval[ model.kopt[] + 1 ], model.xopt, d)
 
                 end
 
@@ -358,7 +359,7 @@ module LOWDER
         output = create_output(model, exit_flag, full_calc, nit, nf)
 
         # Prints information about the iteration, exit flag and LOWDEROutput.
-        print_info(model, output, exit_flag, it_flag, verbose, nit, nf, δ, Δ, full_calc, pred_red, real_red, ρ, d)
+        print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δ, Δ, π, full_calc, pred_red, real_red, ρ, d)
         
         return output
 
