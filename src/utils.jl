@@ -310,6 +310,21 @@ function print_iteration(
         println("Iter. type    : $( it_flag )")
         println("--------------------------------------------------------------------------------")
 
+    elseif it_flag == :criticality
+
+        println("Iteration     : $( nit )")
+        println("Func. eval.   : $( nf )")
+        println("Radius δ      : $( δ )")
+        println("Radius Δ      : $( Δ )")
+        println("Stationarity π: $( π )")
+        println("I_min index   : $( imin_idx )")
+        println("Best point    : $( xopt )")
+        println("Func. val.    : $( fopt )")
+        println("Iter. type    : $( it_flag )")
+        println("Step status   : $( status_flag )")
+        println("Direction d   : $( d )")
+        println("--------------------------------------------------------------------------------")
+
     else
 
         println("Iteration     : $( nit )")
