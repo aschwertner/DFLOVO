@@ -97,6 +97,7 @@ module LOWDER
         real_red = NaN
         ρ = NaN
         π = NaN
+        norm_d = 0.0
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -150,7 +151,7 @@ module LOWDER
             π = stationarity_measure(model, a, b)
 
             # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'πmin', respectively.
-            if ( δ ≤ δmin ) && ( π ≤ πmin )
+            if ( ( δ ≤ δmin ) && ( π ≤ πmin ) )
 
                 # Sets iteration and exit flags
                 it_flag = :nonspecified
@@ -167,59 +168,54 @@ module LOWDER
                 it_flag = :criticality
 
                 # Update parameters
-                δ *= τ1
-                ρ = NaN
-                pred_red = NaN
-                real_red = NaN
-                full_calc = false
+                ρ = 0.0
+                pred_red = 0.0
+                real_red = 0.0
 
             else
 
                 #------------------------------- Step calculation ------------------------------
 
                 status_flag = trsbox!(model, Δ, a, b, active_set, x, d, aux_v)
+                norm_d = norm(d)
 
-                #------------------------------- Step acceptance -------------------------------
+                if norm_d ≥ 0.5 * Δ
 
-                mnew = model(x)
-                pred_red = model.fval[ model.kopt[] + 1 ] - mnew
-                full_calc = false
+                    #------------------------------- Step acceptance -------------------------------
 
-                if pred_red < 0
+                    mnew = model(x)
+                    pred_red = model.fval[ model.kopt[] + 1 ] - mnew
+                    full_calc = false
 
-                    it_flag = :nonspecified
-                    exit_flag = :nondescent
-                    break
+                    if pred_red < 0
 
-                else
-
-                    if nρ < nρmax
-
-                        ρ, real_red, fi_x, x_idx = relative_reduction(model, func_list, pred_red, x)
-                        nf +=1
+                        it_flag = :nonspecified
+                        exit_flag = :nondescent
+                        break
 
                     else
 
-                        full_calc = true
-                        ρ, real_red, fi_x, x_idx = relative_reduction!(model, func_list, r, pred_red, x, imin_set)
-                        nf += r - 1
-                        nρ = 0
+                        if nρ < nρmax
+
+                            ρ, real_red, fi_x, x_idx = relative_reduction(model, func_list, pred_red, x)
+                            nf +=1
+
+                        else
+
+                            full_calc = true
+                            ρ, real_red, fi_x, x_idx = relative_reduction!(model, func_list, r, pred_red, x, imin_set)
+                            nf += r - 1
+                            nρ = 0
+
+                        end
 
                     end
 
-                end
+                else
 
-                #------------------------------- Radii updates ---------------------------------
-
-                if ρ < η1
-
-                    δ *= τ1
-                    Δ *= τ1
-
-                elseif ( ρ > η2 ) && ( norm(d) ≈ Δ )
-
-                    δ *= τ2
-                    Δ *= τ2
+                    ρ = 0.0
+                    pred_red = 0.0
+                    real_red = 0.0
 
                 end
 
@@ -229,12 +225,19 @@ module LOWDER
             # it also computes the new point 'x' and the direction 'd'.
             if ρ ≥ η
 
+                it_flag = :trust_region
+
                 t = choose_index_trsbox(model, Δ, x)
 
-                it_flag = :trust_region
                 nρ = 0
 
             else
+
+                if it_flag != :criticality
+
+                    it_flag = :altmov
+
+                end
 
                 t = choose_index_altmov(model)
 
@@ -242,14 +245,22 @@ module LOWDER
 
                 fi_x = fi_eval( func_list, model.imin[], x)
 
-                if it_flag != :criticality
-
-                    it_flag = :altmov                    
-
-                end
-
                 nf += 1
                 nρ += 1
+
+            end
+
+            #------------------------------- Radii updates ---------------------------------
+
+            if ρ < η1
+
+                δ *= τ1
+                Δ *= τ1
+
+            elseif ( ρ > η2 ) && ( norm_d ≈ Δ )
+
+                δ *= τ2
+                Δ *= τ2
 
             end
 
