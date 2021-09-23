@@ -97,7 +97,9 @@ module LOWDER
         real_red = NaN
         ρ = NaN
         π = NaN
-        norm_d = 0.0
+        norm_d = NaN
+        δold = NaN
+        Δold = NaN
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -168,6 +170,7 @@ module LOWDER
                 it_flag = :criticality
 
                 # Update parameters
+                δ *= τ1
                 ρ = 0.0
                 pred_red = 0.0
                 real_red = 0.0
@@ -213,9 +216,24 @@ module LOWDER
 
                 else
 
+                    # Update parameters
                     ρ = 0.0
                     pred_red = 0.0
                     real_red = 0.0
+
+                end
+
+                #------------------------------- Radii updates ---------------------------------
+
+                if ρ < η1
+
+                    δ *= τ1
+                    Δ *= τ1
+
+                elseif ( ρ > η2 ) && ( norm_d ≈ Δ )
+
+                    δ *= τ2
+                    Δ *= τ2
 
                 end
 
@@ -225,42 +243,36 @@ module LOWDER
             # it also computes the new point 'x' and the direction 'd'.
             if ρ ≥ η
 
+                # Sets iteration flag
                 it_flag = :trust_region
 
-                t = choose_index_trsbox(model, Δ, x)
+                # Chooses the point that must leave the interpolation set 'model.Y'.
+                t = choose_index_trsbox(model, Δold, x)
 
+                # Renitializes the counter
                 nρ = 0
 
             else
 
+                # Sets iteration flag
                 if it_flag != :criticality
 
                     it_flag = :altmov
 
                 end
 
+                # Chooses the point that must leave the interpolation set 'model.Y'.
                 t = choose_index_altmov(model)
 
-                status_flag = altmov!(model, t, Δ, a, b, x, d, aux_v, aux_w, active_set)
+                # Computes the new interpolation point.
+                status_flag = altmov!(model, t, Δold, a, b, x, d, aux_v, aux_w, active_set)
 
+                # Computes the new function value.
                 fi_x = fi_eval( func_list, model.imin[], x)
 
+                # Updates the counters.
                 nf += 1
                 nρ += 1
-
-            end
-
-            #------------------------------- Radii updates ---------------------------------
-
-            if ρ < η1
-
-                δ *= τ1
-                Δ *= τ1
-
-            elseif ( ρ > η2 ) && ( norm_d ≈ Δ )
-
-                δ *= τ2
-                Δ *= τ2
 
             end
 
@@ -370,7 +382,7 @@ module LOWDER
         output = create_output(model, exit_flag, full_calc, nit, nf)
 
         # Prints information about the iteration, exit flag and LOWDEROutput.
-        print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δ, Δ, π, full_calc, pred_red, real_red, ρ, d)
+        print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δold, Δold, π, full_calc, pred_red, real_red, ρ, d)
         
         return output
 
