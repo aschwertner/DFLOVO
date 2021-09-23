@@ -643,31 +643,28 @@ function choose_index_trsbox(
                                 xnew::Vector{Float64}
                                 )
     
-    d_base = xnew - model.xbase
+    dd = zeros(model.n)
     e_t = zeros(model.n)
     sol_t = zeros(model.n)
     qrY = qr(model.Y, Val(true))
     α = - Inf
     t = - 1
 
-    for i=1:model.n
+    for i = 1:model.n
 
-        if i != model.kopt[]
+        @. dd = xnew - model.xbase - model.Y[i, :]
+        e_t[i] = 1.0
+        ldiv!(sol_t, qrY, e_t)
+        α_t = abs( 1.0 + dot( dd, sol_t) )
 
-            e_t[i] = 1.0
-            ldiv!(sol_t, qrY, e_t)
-            α_t = max( 1.0, ( model.dst[i] / Δ ) ^ 2.0 ) * ( 1.0 + dot(d_base, sol_t) )
+        if α_t > α
 
-            if α_t > α
-
-                α = α_t
-                t = i
-
-            end
-
-            e_t[i] = 0.0
+            α = α_t
+            t = i
 
         end
+
+        e_t[i] = 0.0
 
     end
 
@@ -679,7 +676,7 @@ function choose_index_altmov(
                                 model::LinearModel
                             )
     
-    ( val, idx_t ) = findmin( model.dst )
+    ( val, idx_t ) = findmax( model.dst )
 
     if idx_t == model.kopt[]
 
@@ -727,7 +724,8 @@ function altmov!(
     best_abs_ϕ = - 1.0
     best_idx = 0
     best_α = Inf
-    a_0 = dot( model.xopt, model.xopt ) - Δ ^ 2.0
+    a_0 = - Δ ^ 2.0
+    a_1 = 0.0
 
     # Computes the QR factorization of the matrix model.Y
     qrY = qr( model.Y, Val(true) )
@@ -773,7 +771,6 @@ function altmov!(
         # Gets the bounds for α_{j} relative to the trust-region.
         roots = []
         a_2 = dot( d, d )
-        a_1 = 2.0 * dot( d, model.xopt )
         solve_quadratic!(a_2, a_1, a_0, roots)
         
         α_upper = maximum(roots)
@@ -805,8 +802,8 @@ function altmov!(
 
             elseif d[i] < 0.0
 
-                α_lower = min( α_lower, ( b[i] - model.xopt[i] ) / d[i] )
-                α_upper = max( α_upper, ( a[i] - model.xopt[i] ) / d[i] )
+                α_lower = max( α_lower, ( b[i] - model.xopt[i] ) / d[i] )
+                α_upper = min( α_upper, ( a[i] - model.xopt[i] ) / d[i] )
 
             end
 
