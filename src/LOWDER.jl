@@ -267,7 +267,7 @@ module LOWDER
                 t = choose_index_altmov(model)
 
                 # Computes the new interpolation point.
-                status_flag = altmov!(model, t, Δold, a, b, x, d, aux_v, aux_w, active_set)
+                status_flag = altmov!(model, t, δold, a, b, x, d, aux_v, aux_w, active_set)
 
                 # Computes the new function value.
                 fi_x = fi_eval( func_list, model.imin[], x)
