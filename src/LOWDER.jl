@@ -272,6 +272,18 @@ module LOWDER
                 # Renitializes the counter
                 nρ = 0
 
+            elseif ρ > 0.0
+
+                # Sets iteration flag
+                it_flag = :bad_trust_region
+
+                # Chooses the point that must leave the interpolation set 'model.Y'.
+                t = choose_index_trsbox(model, Δold, x)
+
+                # Updates the counters.
+                nf += 1
+                nρ += 1
+
             else
 
                 # Sets iteration flag
