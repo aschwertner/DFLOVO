@@ -115,13 +115,13 @@ module LOWDER
         correct_guess_bounds!(n, δ, a, b, x, ao, bo)
 
         # Computes the value of f_{min}('x') and an index 'imin_idx' ∈ I_{min}('x').
-        fbase, imin_idx = fmin_eval!(func_list, r, x, imin_set)
+        fi_x, imin_idx = fmin_eval!(func_list, r, x, imin_set)
 
         # Updates de function call counter.
         nf += r
 
         # Creates the initial model, modifying the previous 'model' structure.
-        construct_model!(func_list, imin_idx, δ, fbase, x, ao, bo, model)
+        construct_model!(func_list, imin_idx, δ, fi_x, x, ao, bo, model)
 
         # Updates de function call counter.
         nf += n - 1
@@ -144,6 +144,8 @@ module LOWDER
         
         # Main loop
         while true
+
+            it_flag = :nonspecified
 
             # Saves old information about radii
             δold = δ
@@ -200,13 +202,13 @@ module LOWDER
 
                         if nρ < nρmax
 
-                            ρ, real_red, fi_x, x_idx = relative_reduction(model, func_list, pred_red, x)
+                            ρ, real_red, fi_x, imin_idx = relative_reduction(model, func_list, pred_red, x)
                             nf +=1
 
                         else
 
                             full_calc = true
-                            ρ, real_red, fi_x, x_idx = relative_reduction!(model, func_list, r, pred_red, x, imin_set)
+                            ρ, real_red, fi_x, imin_idx = relative_reduction!(model, func_list, r, pred_red, x, imin_set)
                             nf += r - 1
                             nρ = 0
 
@@ -307,24 +309,24 @@ module LOWDER
 
                     if imin_set[ model.imin[] ]
 
-                        x_idx = model.imin[]
+                        imin_idx = model.imin[]
 
                     end
 
                 else
 
-                    fi_x, x_idx = fmin_partial_eval!( func_list, r, x_idx, fi_x, x, imin_set )
+                    fi_x, imin_idx = fmin_partial_eval!( func_list, r, model.imin[], fi_x, x, imin_set )
                     nf += r - 1
 
                     if imin_set[ model.imin[] ]
 
-                        x_idx = model.imin[]
+                        imin_idx = model.imin[]
 
                     end
 
                 end
 
-                if x_idx != model.imin[]
+                if imin_idx != model.imin[]
 
                     if ρ ≥ η1
 
@@ -342,7 +344,7 @@ module LOWDER
                     end
 
                     # Constructs a new model and set the new relative bounds 'ao' and 'bo'.
-                    construct_new_model!( func_list, x_idx, δ, fi_x, x, a, b, ao, bo, model )                   
+                    construct_new_model!( func_list, imin_idx, δ, fi_x, x, a, b, ao, bo, model )                   
 
                 else
 
