@@ -608,8 +608,12 @@ function trsbox!(
                 # Adds the index of the achieved bound constraint to 'active_set',
                 # and updates 's' to be the symmetric projection of 'model.g' in the new set.
 
-                active_set[ idx_B ] = true
-                s[ idx_B ] = 0.0
+                if idx_B != 0
+
+                    active_set[ idx_B ] = true
+                    s[ idx_B ] = 0.0
+
+                end
                 
             end
 
