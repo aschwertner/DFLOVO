@@ -29,6 +29,7 @@ module LOWDER
                     m::Int64=(2 * length(x) + 1),
                     maxit::Int64=5000,
                     maxfun::Int64=(1000 * (length(func_list) + m)),
+                    maxcrit::Int64=(m - 1),
                     nρmax::Int64=3,
                     Γmax::Int64=1,
                     verbose::Int64=0,
@@ -74,12 +75,14 @@ module LOWDER
         
         # Sets some useful constants.
         Δinit = Δ
+        δcrit = exp( log( δmin ) - maxcrit * log( τ1 ) )
 
         # Initializes useful variables, vectors, and matrices.
         nρ = 0                      # Auxiliary counter for simplified 'ρ' calculations.
         nΓ = 0                      # Auxiliary counter for radii adjustments phase.
         nit = 0                     # Counts the number of iterations.
         nf = 0                      # Counts the number of 'f_{i}' function evaluations.
+        ncrit = 0                   # Counts the number of consecutive criticality iterations.
         ao = zeros(Float64, n)      # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
         bo = zeros(Float64, n)      # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
         d = zeros(Float64, n)       # TRSBOX or ALTMOV direction.
@@ -171,13 +174,28 @@ module LOWDER
                 # Sets iteration flag
                 it_flag = :criticality
 
-                # Update parameters
-                δ *= τ1
+                # Update parameters and counter
+                ncrit += 1
                 ρ = 0.0
                 pred_red = 0.0
                 real_red = 0.0
 
+                if ncrit > maxcrit
+
+                    # It allows performing at most 'maxcrit' criticality iterations until the end of the algorithm. 
+                    δ = min( δ, δcrit )
+                    ncrit = 0
+
+                else
+                    
+                    δ *= τ1
+
+                end
+
             else
+                
+                # Update counter
+                ncrit = 0
 
                 #------------------------------- Step calculation ------------------------------
 
