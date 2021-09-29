@@ -338,6 +338,42 @@
         @test( active_set == [true, true] )
         @test( status == :full_active_set )
 
+        # --------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------
+        # --------------------------------------------------------------------------------
+
+        # Model specifications
+        model = LinearModel(2)
+        model.c[] = 970.0
+        model.g .= [-66.0, 692.0]
+        model.kopt[] = 0
+
+        # Box constraints
+        l = [0.0, 0.0]
+        u = [5.0, 5.0]
+
+        # Trust-region
+        Δ = 1.2
+
+        # --------------------------------------------------------------------------------
+        # Test 16 - Full active set
+        # --------------------------------------------------------------------------------
+
+        # Test specifications
+        model.xopt .= [5.0, 0.0]
+        model.fval[model.kopt[] + 1] = model.c[] + dot( model.g, model.xopt )
+
+        active_set = zeros(Bool, 2)
+        x = zeros(Float64, 2)
+        d = zeros(Float64, 2)
+        v_aux = zeros(Float64, 2)
+
+        status = LOWDER.trsbox!(model, Δ, l, u, active_set, x, d, v_aux)
+        @test( x == [ 5.0, 0.0 ] )
+        @test( d == [ 0.0, 0.0 ] )
+        @test( active_set == [true, true] )
+        @test( status == :full_active_set )
+
     end
 
     @testset "altmov" begin
@@ -348,7 +384,7 @@
 
         # Model specifications
         model = LinearModel(2)
-        model.c[] = 0.0
+        model.c[] = 970.0
         model.g .= [1.0, 2.0]
         model.kopt[] = 0
         model.xbase .= zeros(Float64, 2)
@@ -360,8 +396,8 @@
         l = [-5.0, 10.0]
         u = [20.0, 15.0]
 
-        # Trust-region
-        Δ = 2.0
+        # Sample set radius
+        δ = 2.0
 
         # Test specifications
         idx_t = 1
@@ -372,9 +408,44 @@
         v = zeros(Float64, 2)
         w = zeros(Float64, 2)
 
-        status = LOWDER.altmov!(model, idx_t, Δ, l, u, x, d, v, w, active_set)
+        status = LOWDER.altmov!(model, idx_t, δ, l, u, x, d, v, w, active_set)
         @test( x == [2.0, 0.0] )
         @test( d == [2.0, 0.0] )
+        @test( status == :usual_altmov )
+
+        # --------------------------------------------------------------------------------
+        # Test 02
+        # --------------------------------------------------------------------------------
+
+        # Model specifications
+        model = LinearModel(2)
+        model.c[] = 0.0
+        model.g .= [-66.0, 692.0]
+        model.kopt[] = 0
+        model.xbase .= [5.0, 0.0]
+        model.xopt .= [5.0, 0.0]
+        model.Y .= [-1.0 0.0; 0.0 1.0]
+        model.dst .= [1.0, 1.0]
+
+        # Box constraints
+        l = [ 0.0, 0.0 ]
+        u = [ 5.0, 5.0]
+
+        # Sample set radius
+        δ = 1.0
+
+        # Test specifications
+        idx_t = 1
+
+        active_set = zeros(Bool, 2)
+        x = zeros(Float64, 2)
+        d = zeros(Float64, 2)
+        v = zeros(Float64, 2)
+        w = zeros(Float64, 2)
+
+        status = LOWDER.altmov!(model, idx_t, δ, l, u, x, d, v, w, active_set)
+        @test( x == [4.0, 0.0] )
+        @test( d == [-1.0, 0.0] )
         @test( status == :usual_altmov )
 
     end
