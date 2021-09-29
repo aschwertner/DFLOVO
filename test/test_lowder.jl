@@ -26,7 +26,7 @@
 
         x = [1.0, 2.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ, m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
@@ -38,7 +38,7 @@
 
         x = [4.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ, m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -64,7 +64,7 @@
 
         x = [4.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ, m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
@@ -76,7 +76,7 @@
 
         x = [1.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ, m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -102,7 +102,7 @@
 
         x = [1.0, 3.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ, m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
@@ -114,11 +114,50 @@
 
         x = [5.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ, m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
         @test( sol.solution == [5.0, 5.0] )
+
+        # --------------------------------------------------------------------------------
+        # Test 07 - Rosenbrock & Freudenstein and Roth functions 
+        #           (full_active_set and η = 0.0)
+        # --------------------------------------------------------------------------------
+
+        function j1(x)
+            return ( 10.0 * ( x[2] - x[1] ^ 2.0 ) ) ^ 2.0 + ( 1.0 - x[1] ) ^ 2.0
+        end
+        
+        function j2(x)
+            return ( -13.0 + x[1] + ( ( 5.0 - x[2] ) * x[2] - 2.0 ) * x[2] ) ^ 2.0 + ( -29.0 + x[1] + ( ( x[2] + 1.0 ) * x[2] - 14.0 ) * x[2] ) ^ 2.0
+        end
+
+        fmin_list = [j1, j2]
+        a = [0.0, 0.0]
+        b = [5.0, 5.0]
+        Δ = 1.2
+        δ = 1.0
+
+        x = [5.0, 0.0]
+
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3, η = 0.0)
+
+        @test( sol.status == :success )
+        @test( sol.index == 2 )
+        @test( sol.solution == [5.0, 0.0] )
+
+        # --------------------------------------------------------------------------------
+        # Test 08 - Rosenbrock & Freudenstein and Roth functions (full_active_set)
+        # --------------------------------------------------------------------------------
+
+        x = [5.0, 0.0]
+
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+
+        @test( sol.status == :success )
+        @test( sol.index == 2 )
+        @test( sol.solution == [5.0, 0.0] )
 
     end
 
