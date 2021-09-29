@@ -75,7 +75,7 @@ module LOWDER
         
         # Sets some useful constants.
         Δinit = Δ
-        δcrit = exp( log( δmin ) - maxcrit * log( τ1 ) )
+        δcrit = exp( log( ( 1.0 - sqrt( eps( Float64 ) ) ) * δmin ) - maxcrit * log( τ1 ) )
 
         # Initializes useful variables, vectors, and matrices.
         nρ = 0                      # Auxiliary counter for simplified 'ρ' calculations.
@@ -149,6 +149,7 @@ module LOWDER
         while true
 
             it_flag = :nonspecified
+            status_flag = :nonspecified
 
             # Saves old information about radii
             δold = δ
@@ -161,7 +162,6 @@ module LOWDER
             if ( ( δ ≤ δmin ) && ( π ≤ πmin ) )
 
                 # Sets iteration and exit flags
-                it_flag = :nonspecified
                 exit_flag = :success
                 break
 
@@ -176,11 +176,12 @@ module LOWDER
 
                 # Update parameters and counter
                 ncrit += 1
-                ρ = 0.0
-                pred_red = 0.0
-                real_red = 0.0
+                ρ = NaN
+                pred_red = NaN
+                real_red = NaN
+                norm_d = NaN
 
-                if ncrit > maxcrit
+                if ncrit ≥ maxcrit
 
                     # It allows performing at most 'maxcrit' criticality iterations until the end of the algorithm. 
                     δ = min( δ, δcrit )
@@ -200,7 +201,7 @@ module LOWDER
                 #------------------------------- Step calculation ------------------------------
 
                 status_flag = trsbox!(model, Δ, a, b, active_set, x, d, aux_v)
-                norm_d = norm(d)
+                norm_d = norm( d )
 
                 if norm_d ≥ 0.5 * Δ
 
@@ -261,7 +262,7 @@ module LOWDER
 
             # Chooses the point 't' that must leave the interpolation set. In the case of an ALTMOV call,
             # it also computes the new point 'x' and the direction 'd'.
-            if ρ ≥ η
+            if ( ρ ≥ η ) && ( norm_d != 0.0 )
 
                 # Sets iteration flag
                 it_flag = :trust_region
@@ -272,7 +273,7 @@ module LOWDER
                 # Renitializes the counter
                 nρ = 0
 
-            elseif ρ > 0.0
+            elseif ( η != 0.0 ) && ( ρ > 0.0 ) && ( norm_d != 0.0 )
 
                 # Sets iteration flag
                 it_flag = :bad_trust_region
