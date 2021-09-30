@@ -159,6 +159,34 @@
         @test( sol.index == 2 )
         @test( sol.solution == [5.0, 0.0] )
 
+        # --------------------------------------------------------------------------------
+        # Test 09 - Rosenbrock & Freudenstein and Roth functions
+        # --------------------------------------------------------------------------------
+
+        x = [5.0, 3.0]
+        Δ = 2.0
+        δ = 1.0
+
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+
+        @test( sol.status == :success )
+        @test( sol.index == 2 )
+        @test( sol.solution == [5.0, 4.0] )
+
+        # --------------------------------------------------------------------------------
+        # Test 10 - Rosenbrock & Freudenstein and Roth functions
+        # --------------------------------------------------------------------------------
+
+        x = [5.0, 5.0]
+        Δ = 2.0
+        δ = 1.0
+
+        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+
+        @test( sol.status == :success )
+        @test( sol.index == 2 )
+        @test( sol.solution == [5.0, 4.0] )
+
     end
 
 end
