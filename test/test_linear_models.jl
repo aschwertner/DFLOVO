@@ -391,6 +391,7 @@
         model.xopt .= zeros(Float64, 2)
         model.Y .= Matrix{Float64}(I, 2, 2)
         model.dst .= [1.0, 1.0]
+        qrM = qr(model.Y, Val(true))
 
         # Box constraints
         l = [-5.0, 10.0]
@@ -408,7 +409,7 @@
         v = zeros(Float64, 2)
         w = zeros(Float64, 2)
 
-        status = LOWDER.altmov!(model, idx_t, δ, l, u, x, d, v, w, active_set)
+        status = LOWDER.altmov!(model, qrM, idx_t, δ, l, u, x, d, v, w, active_set)
         @test( x == [2.0, 0.0] )
         @test( d == [2.0, 0.0] )
         @test( status == :usual_altmov )
@@ -426,6 +427,7 @@
         model.xopt .= [5.0, 0.0]
         model.Y .= [-1.0 0.0; 0.0 1.0]
         model.dst .= [1.0, 1.0]
+        qrM = qr(model.Y, Val(true))
 
         # Box constraints
         l = [ 0.0, 0.0 ]
@@ -443,7 +445,7 @@
         v = zeros(Float64, 2)
         w = zeros(Float64, 2)
 
-        status = LOWDER.altmov!(model, idx_t, δ, l, u, x, d, v, w, active_set)
+        status = LOWDER.altmov!(model, qrM, idx_t, δ, l, u, x, d, v, w, active_set)
         @test( x == [4.0, 0.0] )
         @test( d == [-1.0, 0.0] )
         @test( status == :usual_altmov )
