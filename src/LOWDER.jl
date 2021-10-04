@@ -135,8 +135,9 @@ module LOWDER
         # Updates de function call counter.
         nf += r
 
-        # Creates the initial model, modifying the previous 'model' structure.
-        construct_model!(func_list, imin_idx, δ, fi_x, x, ao, bo, model)
+        # Creates the initial model by modifying the structure of the previous 'model' 
+        # and calculates the QR factorization of the matrix M associated with the model definition.
+        qrM = construct_model!(func_list, imin_idx, δ, fi_x, x, ao, bo, model)
 
         # Updates de function call counter.
         nf += n - 1
@@ -295,7 +296,7 @@ module LOWDER
                 it_flag = :trust_region
 
                 # Chooses the point that must leave the interpolation set 'model.Y'.
-                t = choose_index_trsbox(model, Δold, x)
+                t = choose_index_trsbox(model, qrM, x)
 
                 # Renitializes the counter
                 nρ = 0
@@ -306,7 +307,7 @@ module LOWDER
                 it_flag = :bad_trust_region
 
                 # Chooses the point that must leave the interpolation set 'model.Y'.
-                t = choose_index_trsbox(model, Δold, x)
+                t = choose_index_trsbox(model, qrM, x)
 
                 # Updates the counters.
                 nρ += 1
@@ -324,7 +325,7 @@ module LOWDER
                 t = choose_index_altmov(model)
 
                 # Computes the new interpolation point.
-                status_flag = altmov!(model, t, δold, a, b, x, d, aux_v, aux_w, active_set)
+                status_flag = altmov!(model, qrM, t, δold, a, b, x, d, aux_v, aux_w, active_set)
 
                 # Computes the new function value.
                 fi_x = fi_eval( func_list, model.imin[], x)
@@ -407,19 +408,19 @@ module LOWDER
                     end
 
                     # Constructs a new model and set the new relative bounds 'ao' and 'bo'.
-                    construct_new_model!( func_list, imin_idx, δ, fi_x, x, a, b, ao, bo, model )                   
+                    qrM = construct_new_model!( func_list, imin_idx, δ, fi_x, x, a, b, ao, bo, model )                   
 
                 else
 
                     # Updates the model with TRSBOX information
-                    update_model!( t, fi_x, x, model, trsbox_step = true)
+                    qrM = update_model!( t, fi_x, x, model, trsbox_step = true)
 
                 end
 
             else
 
                 # Updates the model with ALTMOV information
-                update_model!( t, fi_x, x, model)
+                qrM = update_model!( t, fi_x, x, model)
 
             end
 
