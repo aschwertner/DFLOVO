@@ -262,7 +262,7 @@ module LOWDER
 
             # Chooses the point 't' that must leave the interpolation set. In the case of an ALTMOV call,
             # it also computes the new point 'x' and the direction 'd'.
-            if ( ρ ≥ η ) && ( norm_d != 0.0 )
+            if ρ ≥ η
 
                 # Sets iteration flag
                 it_flag = :trust_region
@@ -273,7 +273,7 @@ module LOWDER
                 # Renitializes the counter
                 nρ = 0
 
-            elseif ( η != 0.0 ) && ( ρ > 0.0 ) && ( norm_d != 0.0 )
+            elseif ρ > 0.0
 
                 # Sets iteration flag
                 it_flag = :bad_trust_region
@@ -282,7 +282,6 @@ module LOWDER
                 t = choose_index_trsbox(model, Δold, x)
 
                 # Updates the counters.
-                nf += 1
                 nρ += 1
 
             else
