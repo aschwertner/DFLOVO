@@ -41,7 +41,8 @@ module LOWDER
                     τ3::Float64=2.0,
                     η::Float64=0.1,
                     η1::Float64=0.3,
-                    η2::Float64=0.6
+                    η2::Float64=0.6,
+                    filename::String="Nothing"
                     )
 
         # Calculates the search space dimension.
@@ -72,6 +73,17 @@ module LOWDER
         @assert 0 ≤ η < η1 "The parameter 'η' must be nonnegative and less than 'η1'."
         @assert η1 ≤ η2 "The parameter 'η2' must be greater than or equal to 'η1'."
         @assert 0 ≤ verbose ≤ 3 "The parameter 'verbose' must be 0, 1, 2 or 3."
+
+        # Verifies if the usuary wants to save a file with information of the iterations.
+        if filename == "Nothing"
+
+            saveinfo = false
+
+        else
+
+            saveinfo = true
+
+        end
         
         # Sets some useful constants.
         Δinit = Δ
@@ -129,6 +141,13 @@ module LOWDER
         # Updates de function call counter.
         nf += n - 1
 
+        if saveinfo
+
+            filename = string(filename, ".dat")
+            data_file = open(filename, "w")
+
+        end
+
         # Returns if 'nf' exceeds 'maxfun'.
         if nf ≥ maxfun
 
@@ -140,7 +159,15 @@ module LOWDER
 
             # Prints information about the iteration, exit flag and LOWDEROutput.
             print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δ, Δ, π, full_calc, pred_red, real_red, ρ, d)
+
+            if saveinfo
+    
+                save_info!(model, it_flag, status_flag, full_calc, nit, nf, δ, Δ, π, ρ, pred_red, real_red, d, data_file)
+                println(data_file, exit_flag)
+                close(data_file)
             
+            end
+
             return output
             
         end
@@ -329,6 +356,12 @@ module LOWDER
 
                 end
 
+                if saveinfo
+    
+                    save_info!(model, it_flag, status_flag, full_calc, nit, nf, δ, Δ, π, ρ, pred_red, real_red, d, data_file)
+                
+                end
+
             end
 
             #--------------------------- Radii adjustments phase ---------------------------
@@ -415,6 +448,14 @@ module LOWDER
 
         # Prints information about the iteration, exit flag and LOWDEROutput.
         print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δold, Δold, π, full_calc, pred_red, real_red, ρ, d)
+
+        if saveinfo
+    
+            save_info!(model, it_flag, status_flag, full_calc, nit, nf, δ, Δ, π, ρ, pred_red, real_red, d, data_file)
+            println(data_file, exit_flag)
+            close(data_file)
+        
+        end
         
         return output
 
