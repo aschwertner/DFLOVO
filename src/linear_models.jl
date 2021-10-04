@@ -1046,3 +1046,56 @@ function altmov_cauchy!(
     return lagrange_pol_t( model, idx_t, ∇Λ_t, z )
 
 end
+
+function compute_theta_linear!(
+                                model::LinearModel, 
+                                a::Vector{Float64},
+                                b::Vector{Float64},
+                                d::Vector{Float64},
+                                proj_d::Vector{Float64},
+                                s::Vector{Float64}
+                                )
+
+    cond_B(θ) = cond_θB(θ, a, b, model.xopt, d, proj_d, s)
+
+    θB = binary_search(0.0, 0.25 * π , cond_B, 1.0e-2)
+
+    if θB == NaN
+
+        @. s = 0.0
+
+    else
+
+        gTd = dot(model.g, model.g)
+        gTpd = dot(model.g, proj_d)
+        gTs = dot(model.g, s)
+
+        cond_Q(θ) = cond_θQ_linear(θ, gTd, gTpd, gTs)
+
+        θQ = binary_search(0.0, 0.25 * π , cond_Q, 1.0e-2)
+
+        if θQ == NaN
+
+            @. s = 0.0
+
+        else
+
+            θ = min(θB, θQ)
+
+            @. s = - proj_d + cos(θ) * proj_d + sin(θ) * s
+
+            if θ == θQ
+
+                return true
+
+            else
+
+                return false
+
+            end
+
+        end
+
+    end
+
+end
