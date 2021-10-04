@@ -164,8 +164,13 @@ function construct_model!(
 
     end
 
+    # Computes the QR-factorization of the matrix Y.
+    qrY = qr(model.Y, Val(true))
+
     # Computes the gradient and the constant of the linear model.
-    rebuild_model!(model)
+    rebuild_model!(qrY, model)
+
+    return qrY
 
 end
 
@@ -331,7 +336,12 @@ function update_model!(
 
     end
 
-    rebuild_model!(model)
+    # Computes the QR-factorization of the matrix Y.
+    qrY = qr(model.Y, Val(true))
+
+    rebuild_model!( qrY, model )
+
+    return qrY
 
 end
 
@@ -415,17 +425,24 @@ function construct_new_model!(
 
     end
 
+    # Computes the QR-factorization of the matrix Y.
+    qrY = qr(model.Y, Val(true))
+
     # Computes the gradient and the constant of the linear model.
-    rebuild_model!(model)
+    rebuild_model!( qrY, model )
+
+    return qrY
 
 end
 
 function rebuild_model!(
+                        qrY::QRPivoted{Float64, Matrix{Float64}},
                         model::LinearModel
                         )
 
     # Solves the system to determine the gradient of the linear model 'model.g'
-    model.g .= model.Y \ ( model.fval[2:end] .- model.fval[1] )
+    model.g .= model.fval[2:end] .- model.fval[1]
+    ldiv!( qrY, model.g )
 
     # Determines the constant of the linear model 'model.c'
     model.c[] = model.fval[1] - dot( model.g, model.xbase )
@@ -643,14 +660,13 @@ end
 
 function choose_index_trsbox(
                                 model::LinearModel,
-                                Δ::Float64,
+                                qrY::QRPivoted{Float64, Matrix{Float64}},
                                 xnew::Vector{Float64}
                                 )
     
     dd = zeros(model.n)
     e_t = zeros(model.n)
     sol_t = zeros(model.n)
-    qrY = qr(model.Y, Val(true))
     α = - Inf
     t = - 1
 
@@ -713,6 +729,7 @@ end
 
 function altmov!(
                     model::LinearModel,
+                    qrY::QRPivoted{Float64, Matrix{Float64}},
                     idx_t::Int64,
                     Δ::Float64,
                     a::Vector{Float64},
@@ -730,9 +747,6 @@ function altmov!(
     best_α = Inf
     a_0 = - Δ ^ 2.0
     a_1 = 0.0
-
-    # Computes the QR factorization of the matrix model.Y
-    qrY = qr( model.Y, Val(true) )
 
     # Computes the gradient of the "idx_t"-th Lagrange polynomial and stores the information in vector 'v'.
     if idx_t == 0.0
