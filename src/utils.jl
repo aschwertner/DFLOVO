@@ -803,3 +803,26 @@ function update_active_set!( a, b, xopt, d, active_set )
     end
 
 end
+
+function save_info!(
+                    model::AbstractModel,
+                    it_flag::Symbol,
+                    status_flag::Symbol,
+                    full_calc::Bool,
+                    nit::Int64,
+                    nf::Int64,
+                    δ::Float64,
+                    Δ::Float64,
+                    π::Float64,
+                    ρ::Float64,
+                    pred_red::Float64,
+                    real_red::Float64,
+                    d::Vector{Float64},
+                    file::IO
+                    )
+    
+    text = "$( nit ) $( nf ) $( model.imin[] ) $( model.kopt[] ) $( model.c[] ) $( model.g ) $( model.xbase ) $( model.xopt ) $( model.fval ) $( model.dst ) $( model.Y ) $( δ ) $( Δ ) $( π ) $( it_flag ) $( status_flag ) $( d ) $( full_calc ) $( ρ ) $( pred_red ) $( real_red )"
+
+    println( file, text )
+    
+end
