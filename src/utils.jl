@@ -424,7 +424,14 @@ function projection_active_set!(
 
 end
 
-function compute_alpha_linear(Δ, a, b, x, d, s)
+function compute_alpha_linear(
+                                Δ::Float64,
+                                a::Vector{Float64},
+                                b::Vector{Float64},
+                                x::Vector{Float64},
+                                d::Vector{Float64},
+                                s::Vector{Float64}
+                                )
 
     roots = []
     α_j = Inf
@@ -485,7 +492,13 @@ function compute_alpha_linear(Δ, a, b, x, d, s)
 
 end
 
-function new_search_direction!(pdTpd, pdTpg, pgTpg, proj_d, proj_grad)
+function new_search_direction!(
+                                pdTpd::Float64,
+                                pdTpg::Float64,
+                                pgTpg::Float64,
+                                proj_d::Vector{Float64},
+                                proj_grad::Vector{Float64}
+                                )
 
     roots = []
     α = 0.0
@@ -563,7 +576,12 @@ function new_search_direction!(pdTpd, pdTpg, pgTpg, proj_d, proj_grad)
 
 end
 
-function solve_quadratic!(a, b, c, roots)
+function solve_quadratic!(
+                            a::Float64,
+                            b::Float64,
+                            c::Float64,
+                            roots::Vector{Any}
+                            )
 
     if a ≈ 0.0
 
@@ -658,7 +676,12 @@ function solve_quadratic!(a, b, c, roots)
 
 end
 
-function binary_search(lower_value, upper_value, stop_condition, ε)
+function binary_search(
+                        lower_value::Float64,
+                        upper_value::Float64,
+                        stop_condition::Function,
+                        ε::Float64
+                        )
 
     if !( stop_condition(lower_value) )
 
@@ -706,7 +729,15 @@ function binary_search(lower_value, upper_value, stop_condition, ε)
 
 end
 
-function cond_θB(θ, a, b, xopt, d, proj_d, s)
+function cond_θB(
+                    θ::Float64,
+                    a::Vector{Float64}, 
+                    b::Vector{Float64},
+                    xopt::Vector{Float64},
+                    d::Vector{Float64},
+                    proj_d::Vector{Float64},
+                    s::Vector{Float64}
+                    )
 
     for i=1:length(a)
 
@@ -724,7 +755,12 @@ function cond_θB(θ, a, b, xopt, d, proj_d, s)
 
 end
 
-function cond_θQ_linear(θ, gTd, gTpd, gTs)
+function cond_θQ_linear(
+                        θ::Float64, 
+                        gTd::Float64, 
+                        gTpd::Float64, 
+                        gTs::Float64
+                        )
 
     if ( gTd - gTpd + cos(θ) * gTpd + sin(θ) * gTs ) < 0.0
 
@@ -738,53 +774,13 @@ function cond_θQ_linear(θ, gTd, gTpd, gTs)
 
 end
 
-function compute_theta_linear!(model, a, b, d, proj_d, s)
-
-    cond_B(θ) = cond_θB(θ, a, b, model.xopt, d, proj_d, s)
-
-    θB = binary_search(0.0, 0.25 * π , cond_B, 1.0e-2)
-
-    if θB == NaN
-
-        @. s = 0.0
-
-    else
-
-        gTd = dot(model.g, model.g)
-        gTpd = dot(model.g, proj_d)
-        gTs = dot(model.g, s)
-
-        cond_Q(θ) = cond_θQ_linear(θ, gTd, gTpd, gTs)
-
-        θQ = binary_search(0.0, 0.25 * π , cond_Q, 1.0e-2)
-
-        if θQ == NaN
-
-            @. s = 0.0
-
-        else
-
-            θ = min(θB, θQ)
-
-            @. s = - proj_d + cos(θ) * proj_d + sin(θ) * s
-
-            if θ == θQ
-
-                return true
-
-            else
-
-                return false
-
-            end
-
-        end
-
-    end
-
-end
-
-function update_active_set!( a, b, xopt, d, active_set )
+function update_active_set!(
+                            a::Vector{Float64},
+                            b::Vector{Float64},
+                            xopt::Vector{Float64},
+                            d::Vector{Float64},
+                            active_set::Vector{Bool}
+                            )
 
     for i=1:length(a)
 
