@@ -42,7 +42,7 @@ module LOWDER
                     η::Float64=0.1,
                     η1::Float64=0.3,
                     η2::Float64=0.6,
-                    filename::String="Nothing"
+                    filename::String=""
                     )
 
         # Calculates the search space dimension.
@@ -75,7 +75,7 @@ module LOWDER
         @assert 0 ≤ verbose ≤ 3 "The parameter 'verbose' must be 0, 1, 2 or 3."
 
         # Verifies if the usuary wants to save a file with information of the iterations.
-        if filename == "Nothing"
+        if filename == ""
 
             saveinfo = false
 
