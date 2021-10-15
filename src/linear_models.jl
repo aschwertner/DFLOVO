@@ -16,17 +16,20 @@ Define the type for linear models
 """
 struct LinearModel <: AbstractModel
 
-    n     :: Int64              # Model dimension.
-    m     :: Int64              # Number of interpolation points.
-    imin  :: Ref{Int64}         # Index of the selected function in 'func_list'.
-    kopt  :: Ref{Int64}         # Index of the best point so far in 'Y'.
-    c     :: Ref{Float64}       # Constant of the model.
-    g     :: AbstractVector     # Gradient of the model.
-    xbase :: AbstractVector     # Origin of the sample set.
-    xopt  :: AbstractVector     # Best point so far (in terms of function values).
-    fval  :: AbstractVector     # Set of the function values of the interpolation points.
-    dst   :: AbstractVector     # Distances between 'xbase' and other interpolation points.
-    Y     :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
+    n        :: Int64              # Model dimension.
+    m        :: Int64              # Number of interpolation points.
+    imin     :: Ref{Int64}         # Index of the selected function in 'func_list'.
+    kopt     :: Ref{Int64}         # Index of the best point so far in 'Y'.
+    c        :: Ref{Float64}       # Constant of the model.
+    g        :: AbstractVector     # Gradient of the model.
+    xbase    :: AbstractVector     # Origin of the sample set.
+    xopt     :: AbstractVector     # Best point so far (in terms of function values).
+    fval     :: AbstractVector     # Set of the function values of the interpolation points.
+    dst      :: AbstractVector     # Distances between 'xbase' and other interpolation points.
+    τM       :: AbstractVector     # Auxiliary vector of QR factorization.
+    jpvtM    :: AbstractVector     # Auxiliary vector with the permutations of QR factorization.
+    factorsM :: AbstractMatrix     # Auxiliary matrix of QR factorization.
+    Y        :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
 
     # TODO: check if m != n + 1
     # TODO: check if the dimensions of the allocated vectors and matrices match
@@ -43,7 +46,7 @@ of R^n.
 LinearModel(n) = LinearModel(
     n, n + 1, Ref{Int64}(), Ref{Int64}(),
     Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n),
-    zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n, n))
+    zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n), zeros(Int64, n), zeros(Float64, n, n), zeros(Float64, n, n))
 
 """
 
@@ -60,7 +63,7 @@ function create_linear_model(
                                 n::Int64
                             )
 
-    return LinearModel(n, n + 1, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n, n))
+    return LinearModel(n, n + 1, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n), zeros(Int64, n), zeros(Float64, n, n), zeros(Float64, n, n))
 
 end
 
