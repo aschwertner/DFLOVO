@@ -26,9 +26,9 @@ struct LinearModel <: AbstractModel
     xopt     :: AbstractVector     # Best point so far (in terms of function values).
     fval     :: AbstractVector     # Set of the function values of the interpolation points.
     dst      :: AbstractVector     # Distances between 'xbase' and other interpolation points.
-    τM       :: AbstractVector     # Auxiliary vector of QR factorization.
-    jpvtM    :: AbstractVector     # Auxiliary vector with the permutations of QR factorization.
-    factorsM :: AbstractMatrix     # Auxiliary matrix of QR factorization.
+    τY       :: AbstractVector     # Auxiliary vector of QR factorization.
+    jpvtY    :: AbstractVector     # Auxiliary vector with the permutations of QR factorization.
+    factorsY :: AbstractMatrix     # Auxiliary matrix of QR factorization.
     Y        :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
 
     # TODO: check if m != n + 1
@@ -439,12 +439,17 @@ function construct_new_model!(
 end
 
 function rebuild_model!(
-                        qrY::QRPivoted{Float64, Matrix{Float64}},
                         model::LinearModel
                         )
 
-    # Solves the system to determine the gradient of the linear model 'model.g'
-    model.g .= model.fval[2:end] .- model.fval[1]
+    # Computes the QR-factorization of the matrix Y and stores the information in 'model.factorsY', 'model.τY' and 'model.jpvtY'.
+    @. model.factorsY = model.Y
+    qrY = qr!(model.factorsM, Val(true))
+    @. model.τy = qrY.τ
+    @. model.jpvtY = qrY.jpvt
+
+    # Solves the system to determine the gradient of the linear model 'model.g'.
+    @. model.g = model.fval[2:end] - model.fval[1]
     ldiv!( qrY, model.g )
 
     # Determines the constant of the linear model 'model.c'
