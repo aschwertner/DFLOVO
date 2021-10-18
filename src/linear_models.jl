@@ -510,7 +510,7 @@ function trsbox!(
 
     # If 's' is a null vector, we won't get any decreases in that direction.
     # Therefore, 'd' is returned as the null vector.
-    if iszero( norm(s) )
+    if norm(s) ≈ 0.0
 
         return :null_search_direction
 
@@ -558,7 +558,7 @@ function trsbox!(
                     new_search_direction!(pdTpd, pdTpg, pgTpg, x, s)
 
                     # Verifies if the direction 's' is null.
-                    if iszero( norm(s) )
+                    if norm(s) ≈ 0.0
 
                         step_projection!(model, a, b, x, d)
             
@@ -570,7 +570,7 @@ function trsbox!(
                     # Note that the vector 's' holds d(θ) - d.
                     chose_θQ = compute_theta_linear!(model, a, b, d, x, s)
 
-                    if iszero( norm(s) )
+                    if norm(s) ≈ 0.0
 
                         step_projection!(model, a, b, x, d)
 
@@ -645,7 +645,7 @@ function trsbox!(
         end
 
         # If the direction 's' is null, the procedure also terminates.
-        if iszero( norm(s) )
+        if norm(s) ≈ 0.0
 
             step_projection!(model, a, b, x, d)
 
