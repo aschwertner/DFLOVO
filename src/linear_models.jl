@@ -67,6 +67,25 @@ function create_linear_model(
 
 end
 
+function rebuild_model!(
+                        model::LinearModel
+                        )
+
+    # Computes the QR-factorization of the matrix Y and stores the information in 'model.factorsY', 'model.τY' and 'model.jpvtY'.
+    @. model.factorsY = model.Y
+    qrY = qr!(model.factorsY, Val(true))
+    @. model.τY = qrY.τ
+    @. model.jpvtY = qrY.jpvt
+
+    # Solves the system to determine the gradient of the linear model 'model.g'.
+    @. model.g = model.fval[2:end] - model.fval[1]
+    ldiv!(qrY, model.g)
+
+    # Determines the constant of the linear model 'model.c'
+    model.c[] = model.fval[1] - dot(model.g, model.xbase)
+
+end
+
 """
 
     construct_model!(func_list::Array{Function, 1}, imin_idx::Int64, 
@@ -124,7 +143,6 @@ function construct_model!(
         if bo[i] == 0.0
 
             model.Y[i, i] = - δ
-
             xbase[i] -= δ
             model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
             xbase[i] += δ
@@ -132,7 +150,6 @@ function construct_model!(
         else
 
             model.Y[i, i] = δ
-
             xbase[i] += δ
             model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
             xbase[i] -= δ
@@ -161,54 +178,15 @@ function construct_model!(
     if kopt != 0
 
         model.xopt[kopt] += model.Y[kopt, kopt]
-
         @. model.dst *= sqrt(2.0)
         model.dst[kopt] = δ
 
     end
 
-    # Computes the QR-factorization of the matrix Y.
-    qrY = qr(model.Y, Val(true))
-
-    # Computes the gradient and the constant of the linear model.
-    rebuild_model!(qrY, model)
-
-    return qrY
+    # Computes the constant and gradient of the linear model and the QR-factorization of the system.
+    rebuild_model!( model )
 
 end
-
-"""
-
-    stationarity_measure(model::LinearModel, a::Vector{Float64}, 
-                            b::Vector{Float64})
-
-Calculates the stationarity measure π_{k} = || P_{Ω}( x_{k} - g_{k} ) - x_{k} ||.
-
-    - 'model': model of LinearModel type. 
-
-    - 'a': n-dimensional vector with the lower bounds.
-
-    - 'b': n-dimensional vector with the upper bounds.
-
-Returns the stationarity measure.
-
-"""
-function stationarity_measure(
-                                model::LinearModel,
-                                a::Vector{Float64}, 
-                                b::Vector{Float64}
-                                )
-
-    aux = 0.0
-    for i = 1:model.n
-        aux += ( min( max( a[i], model.xopt[i] - model.g[i] ), b[i] ) - model.xopt[i] ) ^ 2.0
-    end
-
-    return sqrt(aux)
-
-end
-
-( model::LinearModel )( x::AbstractVector ) = model.c[] + dot( model.g, x )
 
 function update_model!(
                         t::Int64,
@@ -236,11 +214,17 @@ function update_model!(
         end
 
         @views for i=1:model.n
+
             if i == t
+
                 model.dst[i] = norm( model.Y[i, :] )
+
             else
+
                 model.dst[i] = norm( model.Y[i, :] - model.Y[t, :] )
+
             end
+
         end
 
     else
@@ -323,8 +307,11 @@ function update_model!(
                 for i=1:model.n
 
                     model.xopt[i] = xnew[i]
+
                     if i != t
+
                         model.dst[i] = norm( model.Y[i, :] - model.Y[t, :] )
+
                     end
 
                 end
@@ -339,12 +326,8 @@ function update_model!(
 
     end
 
-    # Computes the QR-factorization of the matrix Y.
-    qrY = qr(model.Y, Val(true))
-
-    rebuild_model!( qrY, model )
-
-    return qrY
+    # Computes the constant and gradient of the linear model and the QR-factorization of the system.
+    rebuild_model!( model )
 
 end
 
@@ -385,7 +368,6 @@ function construct_new_model!(
         if bo[i] > δ
 
             model.Y[i, i] += δ
-
             xbase[i] += δ
             model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
             xbase[i] -= δ
@@ -393,7 +375,6 @@ function construct_new_model!(
         else
 
             model.Y[i, i] -= δ
-
             xbase[i] -= δ
             model.fval[i + 1] = fi_eval(func_list, imin_idx, xbase)
             xbase[i] += δ
@@ -422,40 +403,50 @@ function construct_new_model!(
     if kopt != 0
 
         model.xopt[ kopt ] += model.Y[ kopt, kopt ]
-
         @. model.dst *= srqt(2.0)
         model.dst[kopt] = δ
 
     end
 
-    # Computes the QR-factorization of the matrix Y.
-    qrY = qr(model.Y, Val(true))
-
-    # Computes the gradient and the constant of the linear model.
-    rebuild_model!( qrY, model )
-
-    return qrY
+    # Computes the constant and gradient of the linear model and the QR-factorization of the system.
+    rebuild_model!( model )
 
 end
 
-function rebuild_model!(
-                        model::LinearModel
-                        )
+"""
 
-    # Computes the QR-factorization of the matrix Y and stores the information in 'model.factorsY', 'model.τY' and 'model.jpvtY'.
-    @. model.factorsY = model.Y
-    qrY = qr!(model.factorsM, Val(true))
-    @. model.τy = qrY.τ
-    @. model.jpvtY = qrY.jpvt
+    stationarity_measure(model::LinearModel, a::Vector{Float64}, 
+                            b::Vector{Float64})
 
-    # Solves the system to determine the gradient of the linear model 'model.g'.
-    @. model.g = model.fval[2:end] - model.fval[1]
-    ldiv!( qrY, model.g )
+Calculates the stationarity measure π_{k} = || P_{Ω}( x_{k} - g_{k} ) - x_{k} ||.
 
-    # Determines the constant of the linear model 'model.c'
-    model.c[] = model.fval[1] - dot( model.g, model.xbase )
+    - 'model': model of LinearModel type. 
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+Returns the stationarity measure.
+
+"""
+function stationarity_measure(
+                                model::LinearModel,
+                                a::Vector{Float64}, 
+                                b::Vector{Float64}
+                                )
+
+    aux = 0.0
+    for i = 1:model.n
+
+        aux += ( min( max( a[i], model.xopt[i] - model.g[i] ), b[i] ) - model.xopt[i] ) ^ 2.0
+
+    end
+
+    return sqrt(aux)
 
 end
+
+( model::LinearModel )( x::AbstractVector ) = model.c[] + dot( model.g, x )
 
 function compute_active_set!(
                         model::LinearModel,
@@ -668,10 +659,10 @@ end
 
 function choose_index_trsbox(
                                 model::LinearModel,
-                                qrY::QRPivoted{Float64, Matrix{Float64}},
                                 xnew::Vector{Float64}
                                 )
     
+    qrY = QRPivoted( model.factorsY, model.τY, model.jpvtY )
     dd = zeros(model.n)
     e_t = zeros(model.n)
     sol_t = zeros(model.n)
@@ -737,7 +728,6 @@ end
 
 function altmov!(
                     model::LinearModel,
-                    qrY::QRPivoted{Float64, Matrix{Float64}},
                     idx_t::Int64,
                     Δ::Float64,
                     a::Vector{Float64},
@@ -749,6 +739,9 @@ function altmov!(
                     altmov_set::Vector{Bool}
                     )
 
+    # Reconstruct the QR-factorization of the system.
+    qrY = QRPivoted( model.factorsY, model.τY, model.jpvtY )
+    
     # Initializes some usefull variables and constants
     best_abs_ϕ = - 1.0
     best_idx = 0
