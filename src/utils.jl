@@ -424,6 +424,23 @@ function projection_active_set!(
 
 end
 
+function step_projection!(
+                            model::AbstractModel,
+                            a::Vector{Float64},
+                            b::Vector{Float64},
+                            x::Vector{Float64},
+                            d::Vector{Float64}
+                            )
+
+    for i = 1:model.n
+
+        x[i] = max( a[i], min( model.xopt[i] + d[i], b[i] ) )
+        d[i] = x[i] - model.xopt[i]
+
+    end
+
+end
+
 function compute_alpha_linear(
                                 Δ::Float64,
                                 a::Vector{Float64},
