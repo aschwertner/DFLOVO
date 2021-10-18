@@ -296,7 +296,7 @@ module LOWDER
                 it_flag = :trust_region
 
                 # Chooses the point that must leave the interpolation set 'model.Y'.
-                t = choose_index_trsbox(model, x)
+                t = choose_index_trsbox(model, x, aux_v)
 
                 # Renitializes the counter
                 nρ = 0
@@ -307,7 +307,7 @@ module LOWDER
                 it_flag = :bad_trust_region
 
                 # Chooses the point that must leave the interpolation set 'model.Y'.
-                t = choose_index_trsbox(model, x)
+                t = choose_index_trsbox(model, x, aux_v)
 
                 # Updates the counters.
                 nρ += 1
