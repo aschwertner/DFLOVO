@@ -397,7 +397,7 @@
         model.jpvtY .= qrY.jpvt
 
         # Box constraints
-        l = [-5.0, 10.0]
+        l = [-5.0, -10.0]
         u = [20.0, 15.0]
 
         # Sample set radius
