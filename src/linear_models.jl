@@ -659,22 +659,20 @@ end
 
 function choose_index_trsbox(
                                 model::LinearModel,
-                                xnew::Vector{Float64}
+                                xnew::Vector{Float64},
+                                v::Vector{Float64}
                                 )
     
     qrY = QRPivoted( model.factorsY, model.τY, model.jpvtY )
-    dd = zeros(model.n)
-    e_t = zeros(model.n)
-    sol_t = zeros(model.n)
     α = - Inf
     t = - 1
 
     for i = 1:model.n
 
-        @. dd = xnew - model.xbase - model.Y[i, :]
-        e_t[i] = 1.0
-        ldiv!(sol_t, qrY, e_t)
-        α_t = abs( 1.0 + dot( dd, sol_t) )
+        @. v = 0.0
+        v[i] = 1.0
+        ldiv!(qrY, v)
+        α_t = abs( 1.0 + dot( xnew, v ) - dot( model.xbase, v ) - dot( model.Y[i, :], v ) )
 
         if α_t > α
 
@@ -682,8 +680,6 @@ function choose_index_trsbox(
             t = i
 
         end
-
-        e_t[i] = 0.0
 
     end
 
