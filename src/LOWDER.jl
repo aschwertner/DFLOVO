@@ -137,7 +137,7 @@ module LOWDER
 
         # Creates the initial model by modifying the structure of the previous 'model' 
         # and calculates the QR factorization of the matrix M associated with the model definition.
-        qrM = construct_model!(func_list, imin_idx, δ, fi_x, x, ao, bo, model)
+        construct_model!(func_list, imin_idx, δ, fi_x, x, ao, bo, model)
 
         # Updates de function call counter.
         nf += n - 1
@@ -296,7 +296,7 @@ module LOWDER
                 it_flag = :trust_region
 
                 # Chooses the point that must leave the interpolation set 'model.Y'.
-                t = choose_index_trsbox(model, qrM, x)
+                t = choose_index_trsbox(model, x)
 
                 # Renitializes the counter
                 nρ = 0
@@ -307,7 +307,7 @@ module LOWDER
                 it_flag = :bad_trust_region
 
                 # Chooses the point that must leave the interpolation set 'model.Y'.
-                t = choose_index_trsbox(model, qrM, x)
+                t = choose_index_trsbox(model, x)
 
                 # Updates the counters.
                 nρ += 1
@@ -325,10 +325,10 @@ module LOWDER
                 t = choose_index_altmov(model)
 
                 # Computes the new interpolation point.
-                status_flag = altmov!(model, qrM, t, δold, a, b, x, d, aux_v, aux_w, active_set)
+                status_flag = altmov!(model, t, δold, a, b, x, d, aux_v, aux_w, active_set)
 
                 # Computes the new function value.
-                fi_x = fi_eval( func_list, model.imin[], x)
+                fi_x = fi_eval(func_list, model.imin[], x)
 
                 # Updates the counters.
                 nf += 1
@@ -408,19 +408,19 @@ module LOWDER
                     end
 
                     # Constructs a new model and set the new relative bounds 'ao' and 'bo'.
-                    qrM = construct_new_model!( func_list, imin_idx, δ, fi_x, x, a, b, ao, bo, model )                   
+                    construct_new_model!( func_list, imin_idx, δ, fi_x, x, a, b, ao, bo, model )                   
 
                 else
 
                     # Updates the model with TRSBOX information
-                    qrM = update_model!( t, fi_x, x, model, trsbox_step = true)
+                    update_model!( t, fi_x, x, model, trsbox_step = true)
 
                 end
 
             else
 
                 # Updates the model with ALTMOV information
-                qrM = update_model!( t, fi_x, x, model)
+                update_model!( t, fi_x, x, model)
 
             end
 
