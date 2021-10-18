@@ -403,7 +403,7 @@ function construct_new_model!(
     if kopt != 0
 
         model.xopt[ kopt ] += model.Y[ kopt, kopt ]
-        @. model.dst *= srqt(2.0)
+        @. model.dst *= sqrt(2.0)
         model.dst[kopt] = δ
 
     end
@@ -545,7 +545,7 @@ function trsbox!(
                 # Tests the stopping criteria.
                 if ( pdTpd * pgTpg - pdTpg ^ 2.0 ) ≤ 1.0e-4 * ( fopt - model.c[] - dot( model.g, model.xopt ) - dot( model.g, d ) )
 
-                    @. x = model.xopt + d
+                    step_projection!(model, a, b, x, d)
 
                     return :trust_region_boundary
 
@@ -560,7 +560,7 @@ function trsbox!(
                     # Verifies if the direction 's' is null.
                     if iszero( norm(s) )
 
-                        @. x = model.xopt + d
+                        step_projection!(model, a, b, x, d)
             
                         return :null_new_search_direction
                 
@@ -572,7 +572,7 @@ function trsbox!(
 
                     if iszero( norm(s) )
 
-                        @. x = model.xopt + d
+                        step_projection!(model, a, b, x, d)
 
                         return :null_angle_search_direction
 
@@ -592,7 +592,7 @@ function trsbox!(
                         # Verifies the stopping criteria.
                         if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c[] - dot( model.g, model.xopt ) - dot( model.g, d ) )
 
-                            @. x = model.xopt + d
+                            step_projection!(model, a, b, x, d)
 
                             return :tired_trust_region
 
@@ -615,7 +615,7 @@ function trsbox!(
             # Verifies the stopping criteria.
             if ( norm(s) * Δ ) ≤ 1.0e-2 * ( fopt - model.c[] - dot( model.g, x ) - dot( model.g, d ) )
 
-                @. x += d
+                step_projection!(model, a, b, x, d)
                 
                 return :tired_bound_constraint
 
@@ -638,7 +638,7 @@ function trsbox!(
         # If the set of active constraints is full, the procedure terminates.
         if sum(active_set) == model.n
 
-            @. x += d
+            step_projection!(model, a, b, x, d)
 
             return :full_active_set
     
@@ -647,7 +647,7 @@ function trsbox!(
         # If the direction 's' is null, the procedure also terminates.
         if iszero( norm(s) )
 
-            @. x += d
+            step_projection!(model, a, b, x, d)
 
             return :null_search_direction
         
@@ -882,19 +882,19 @@ function altmov!(
             end
 
         end
-
-        @. x = model.xopt + d
+        
+        step_projection!(model, a, b, x, d)
 
         return :usual_altmov
 
     elseif idx == 2
 
-        @. x = model.xopt + d
+        step_projection!(model, a, b, x, d)
 
     else
 
         @. d = x
-        @. x += model.xopt
+        step_projection!(model, a, b, x, d)
 
     end
 
