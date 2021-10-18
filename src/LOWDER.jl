@@ -144,7 +144,6 @@ module LOWDER
 
         if saveinfo
 
-            filename = string(filename, ".dat")
             data_file = open(filename, "w")
 
         end
