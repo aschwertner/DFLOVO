@@ -834,8 +834,50 @@ function save_info!(
                     file::IO
                     )
     
-    text = "$( nit ) $( nf ) $( model.imin[] ) $( model.kopt[] ) $( model.c[] ) $( model.g ) $( model.xbase ) $( model.xopt ) $( model.fval ) $( model.dst ) $( model.Y ) $( δ ) $( Δ ) $( π ) $( it_flag ) $( status_flag ) $( d ) $( full_calc ) $( ρ ) $( pred_red ) $( real_red )"
+    text = "$( nit ) $( nf ) $( model.imin[] ) $( model.kopt[] ) $( δ ) $( Δ ) $( π ) $( it_flag ) $( status_flag ) $( full_calc ) $( ρ ) $( pred_red ) $( real_red ) $( model.c[] )"
 
-    println( file, text )
+    print( file, text )
+
+    for i = 1:model.n
+
+        print( file, " $( model.g[i] )" )
+
+    end
+
+    for i = 1:model.n
+
+        print( file, " $( model.xbase[i] )" )
+
+    end
+
+    for i = 1:model.n
+
+        print( file, " $( model.xopt[i] )" )
+
+    end
+
+    for i = 1:model.m
+
+        print( file, " $( model.fval[i] )" )
+
+    end
+
+    for i = 1:(model.m - 1)
+
+        for j = 1:model.n
+
+            print( file, " $( model.Y[j, i] )" )
+
+        end
+
+    end
+
+    for i = 1:(model.n - 1)
+
+        print( file, " $( d[i] )" )
+
+    end
+
+    println( file, " $( d[model.n] )" )
     
 end
