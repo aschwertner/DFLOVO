@@ -366,7 +366,7 @@ module LOWDER
 
             #--------------------------- Radii adjustments phase ---------------------------
 
-            if ρ ≥ η
+            if ρ > 0.0
 
                 if full_calc
 
