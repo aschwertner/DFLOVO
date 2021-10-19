@@ -866,7 +866,7 @@ function save_info!(
 
         for j = 1:model.n
 
-            print( file, " $( model.Y[j, i] )" )
+            print( file, " $( model.Y[i, j] )" )
 
         end
 
