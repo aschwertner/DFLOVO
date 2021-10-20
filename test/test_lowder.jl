@@ -211,7 +211,7 @@
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
-        @test( sol.solution == [0.0, 0.0] )
+        @test( isapprox( sol.solution, [0.0, 0.0], atol=1e-4 ) )
 
     end
 
