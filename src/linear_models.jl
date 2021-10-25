@@ -235,6 +235,8 @@ function update_model!(
 
         if t == 0
 
+            @assert model.kopt[] != 0 "In ALTMOV iterations, if the index 't' is set to 0, so the index 'kopt' cannot be 0."
+
             # The point 'xbase' is dropped.
 
             if fnew < model.fval[ model.kopt[] + 1 ]
