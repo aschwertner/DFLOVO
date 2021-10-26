@@ -25,3 +25,15 @@ struct QuadraticModel <: AbstractModel
     ZMAT  :: AbstractMatrix     # Holds the elements of 'Z', from the factorization 'Ω = ZZ^T'.
 
 end
+
+function create_quadratic_model(
+                                n::Int64,
+                                m::Int64
+                                )
+
+    return QuadraticModel( n, m, Ref{Int64}(), Ref{Int64}(), 
+                            Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, convert(Int64, n * ( n + 1 ) / 2) ), 
+                            zeros(Float64, m), zeros(Float64, n), zeros(Float64, n), zeros(Int64, m), 
+                            zeros(Float64, n), zeros(Float64, m - 1, n), zeros(Float64, n + m, n), zeros(Float64, m, m - n - 1) )
+
+end
