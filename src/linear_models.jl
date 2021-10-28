@@ -25,7 +25,7 @@ struct LinearModel <: AbstractModel
     xbase    :: AbstractVector     # Origin of the sample set.
     xopt     :: AbstractVector     # Best point so far (in terms of function values).
     fval     :: AbstractVector     # Set of the function values of the interpolation points.
-    dst      :: AbstractVector     # Distances between 'xbase' and other interpolation points.
+    dst      :: AbstractVector     # Distances between 'xopt' and other interpolation points.
     τY       :: AbstractVector     # Auxiliary vector of QR factorization.
     jpvtY    :: AbstractVector     # Auxiliary vector with the permutations of QR factorization.
     factorsY :: AbstractMatrix     # Auxiliary matrix of QR factorization.
