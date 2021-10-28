@@ -348,6 +348,11 @@ module LOWDER
                 exit_flag = :max_evaluations
                 break
 
+            elseif ( δ ≤ δmin ) && ( max_distance( model ) ≤ δ )
+
+                exit_flag = :small_sampling_radius
+                break
+
             else
 
                 if verbose ≥ 1
