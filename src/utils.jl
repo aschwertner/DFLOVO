@@ -881,3 +881,25 @@ function save_info!(
     println( file, " $( d[model.n] )" )
     
 end
+
+function max_distance(
+                        model::AbstractModel
+                        )
+
+    max_dst = - Inf
+
+    for i = 1:( model.m - 1 )
+
+        aux = norm( model.Y[i, :] )
+
+        if max_dst ≤ aux
+
+            max_dst = aux
+
+        end
+
+    end
+
+    return max_dst
+
+end
