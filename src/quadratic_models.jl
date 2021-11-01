@@ -18,7 +18,7 @@ struct QuadraticModel <: AbstractModel
     xbase :: AbstractVector     # Origin of the sample set.
     xopt  :: AbstractVector     # Best point so far (in terms of function values).
     fval  :: AbstractVector     # Set of the function values of the interpolation points.
-    dst   :: AbstractVector     # Distances between 'xbase' and other interpolation points.
+    dst   :: AbstractVector     # Distances between 'xopt' and other interpolation points.
     Y     :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
     BMAT  :: AbstractMatrix     # Holds the elements of 'Ξ', with the exception of its first column, 
                                 # and the elements of 'Υ', with the exception of its first row and column.
@@ -35,5 +35,35 @@ function create_quadratic_model(
                             Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, convert(Int64, n * ( n + 1 ) / 2) ), 
                             zeros(Float64, m), zeros(Float64, n), zeros(Float64, n), zeros(Int64, m), 
                             zeros(Float64, n), zeros(Float64, m - 1, n), zeros(Float64, n + m, n), zeros(Float64, m, m - n - 1) )
+
+end
+
+function reconstruct_original_point!(
+                                    model::AbstractModel,
+                                    idx::Int64,
+                                    a::Vector{Float64},
+                                    b::Vector{Float64},
+                                    ao::Vector{Float64},
+                                    bo::Vector{Float64},
+                                    x::Vector{Float64}
+                                    )
+
+    for i = 1:model.n
+     
+        if model.Y[idx, i] == ao[i]
+
+            x[i] = a[i]
+
+        elseif model.Y[idx, i] == bo[i]
+
+            x[i] = b[i]
+
+        else
+
+            x[i] = min( max( a[i], model.xbase[i] + model.Y[idx, i] ), b[i] )
+
+        end
+
+    end
 
 end
