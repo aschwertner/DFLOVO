@@ -243,7 +243,7 @@ function construct_model!(
     @. model.xopt = xbase
     model.kopt[] = kopt
 
-    # Computes 'gopt' if necessary
+    # Computes 'gopt' and updates 'dst' if necessary
     if kopt == 0
 
         @. model.gopt = model.g
@@ -251,6 +251,20 @@ function construct_model!(
     else
 
         update_gopt!( model, true )
+
+        for i=1:(model.m - 1)
+
+            if i == kopt
+
+                continue
+
+            else
+
+                model.dst[i] = norm( model.Y[i, :] - model.Y[kopt, :] )
+
+            end
+
+        end
 
     end
 
