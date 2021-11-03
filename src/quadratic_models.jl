@@ -275,33 +275,14 @@ function update_gopt!(
                         first_call::Bool
                         )
 
-    @. model.gopt = model.g
-
-    idx_h = 0
-
-    for j=1:model.n
-
-        for i=1:j
-
-            idx_h += 1
-
-            if i < j
-
-                model.gopt[j] += model.hq[idx_h] * model.xopt[i]
-
-            end
-
-            model.gopt[i] += model.hq[idx_h] * model.xopt[j]
-
-        end
-
-    end
+    mul_hess_vec!( model, model.xopt, model.gopt )
+    @. model.gopt += model.g
 
     if !( first_call )
 
         for k=1:( model.m - 1 )
 
-            tmp = model.pq[k] * dot( model.Y[k, :], model.xopt ) * model.pq[k]
+            tmp = model.pq[k] * dot( model.Y[k, :], model.xopt )
 
             for i=1:model.n
 
@@ -313,4 +294,33 @@ function update_gopt!(
 
     end
 
+end
+
+function mul_hess_vec!(
+                        model::QuadraticModel,
+                        vec::Vector{Float64},
+                        x::Vector{Float64}
+                        )
+
+    
+    for j=1:model.n
+
+        x[j] = 0.0
+
+        for i=1:j
+
+            idx_h += 1
+
+            if i < j
+
+                x[j] += model.hq[idx_h] * vec[i]
+
+            end
+
+            x[i] += model.hq[idx_h] * vec[j]
+
+        end
+
+    end
+    
 end
