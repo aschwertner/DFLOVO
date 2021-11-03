@@ -903,3 +903,19 @@ function max_distance(
     return max_dst
 
 end
+
+function choose_index_altmov(
+                                model::AbstractModel
+                            )
+    
+    ( val, idx_t ) = findmax( model.dst )
+
+    if idx_t == model.kopt[]
+
+        idx_t = 0
+
+    end
+
+    return idx_t
+
+end
