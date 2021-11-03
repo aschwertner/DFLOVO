@@ -322,5 +322,35 @@ function mul_hess_vec!(
         end
 
     end
-    
+
+end
+
+function mul_vec_hess_vec!(
+                            model::QuadraticModel,
+                            v::Vector{Float64},
+                            w::Vector{Float64}
+                            )
+
+    aux = 0.0
+
+    for j=1:model.n
+
+        for i=1:j
+
+            idx_h += 1
+
+            if i < j
+
+                aux += model.hq[idx_h] * w[i] * v[j]
+
+            end
+
+            aux += model.hq[idx_h] * w[j] * v[i]
+
+        end
+
+    end
+
+    return aux
+
 end
