@@ -274,8 +274,11 @@ function update_gopt!(
                         model::QuadraticModel,
                         first_call::Bool
                         )
-
-    mul_hess_vec!( model, model.xopt, model.gopt )
+    
+    # Computes H*d, where d = xopt - xbase, and store in 'gopt'.
+    mul_hess_vec!( model, model.Y[model.kopt[], :], model.gopt )
+    
+    # Computes gopt = g + H * d
     @. model.gopt += model.g
 
     # Why? Search in BOBYQA's paper and implementation
