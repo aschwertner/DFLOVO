@@ -354,3 +354,20 @@ function mul_vec_hess_vec!(
     return aux
 
 end
+
+function stationarity_measure(
+                                model::QuadraticModel,
+                                a::Vector{Float64}, 
+                                b::Vector{Float64}
+                                )
+
+    aux = 0.0
+    for i = 1:model.n
+
+        aux += ( min( max( a[i], model.xopt[i] - model.gopt[i] ), b[i] ) - model.xopt[i] ) ^ 2.0
+
+    end
+
+    return sqrt(aux)
+
+end
