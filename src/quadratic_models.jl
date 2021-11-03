@@ -278,6 +278,7 @@ function update_gopt!(
     mul_hess_vec!( model, model.xopt, model.gopt )
     @. model.gopt += model.g
 
+    # Why? Search in BOBYQA's paper and implementation
     if !( first_call )
 
         for k=1:( model.m - 1 )
@@ -369,5 +370,28 @@ function stationarity_measure(
     end
 
     return sqrt(aux)
+
+end
+
+function compute_active_set!(
+                        model::QuadraticModel,
+                        a::Vector{Float64},
+                        b::Vector{Float64},
+                        active_set::Vector{Bool}
+                        )
+
+    for i=1:model.n
+
+        if ( model.xopt[i] == a[i] && model.gopt[i] ≥ 0.0 ) || ( model.xopt[i] == b[i] && model.gopt[i] ≤ 0.0 )
+
+            active_set[i] = true
+
+        else
+            
+            active_set[i] = false
+
+        end
+
+    end
 
 end
