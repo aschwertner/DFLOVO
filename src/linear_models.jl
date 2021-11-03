@@ -689,22 +689,6 @@ function choose_index_trsbox(
 
 end
 
-function choose_index_altmov(
-                                model::LinearModel
-                            )
-    
-    ( val, idx_t ) = findmax( model.dst )
-
-    if idx_t == model.kopt[]
-
-        idx_t = 0
-
-    end
-
-    return idx_t
-
-end
-
 function lagrange_pol_t(
                         model::LinearModel,
                         idx_t::Int64,
