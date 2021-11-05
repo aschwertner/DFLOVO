@@ -6,38 +6,52 @@ export LinearModel, trsbox!
 
 """
 
-Define the type for linear models
+Define the type for linear models.
 
-  - `n`: model dimension
-  - `m`: number of interpolation points
-  - `imin`: index of the function interpolated
-  - `kopt`: index of the best point so far in `Y`
+    - 'n': model dimension.
+    - 'm': number of interpolation points.
+    - 'imin': index of the function interpolated.
+    - 'kopt': index of the best point so far in 'Y'.
+    - 'c': constant of the model.
+    - 'g': gradient of the model.
+    - 'xbase': origin of the sample set and center of the model.
+    - 'xopt': best point so far (in terms of function values).
+    - 'fval': set of the function values of the interpolation points.
+    - 'dst': distances between 'xopt' and other interpolation points.
+    - 'τY': auxiliary vector of QR factorization.
+    - 'jpvtY': auxiliary vector with the permutations of QR factorization.
+    - 'factorsY': auxiliary matrix of QR factorization.
+    - 'Y': set of interpolation points, shifted from the center of the sample set 'xbase'.
 
 """
 struct LinearModel <: AbstractModel
 
-    n        :: Int64              # Model dimension.
-    m        :: Int64              # Number of interpolation points.
-    imin     :: Ref{Int64}         # Index of the selected function in 'func_list'.
-    kopt     :: Ref{Int64}         # Index of the best point so far in 'Y'.
-    c        :: Ref{Float64}       # Constant of the model.
-    g        :: AbstractVector     # Gradient of the model.
-    xbase    :: AbstractVector     # Origin of the sample set.
-    xopt     :: AbstractVector     # Best point so far (in terms of function values).
-    fval     :: AbstractVector     # Set of the function values of the interpolation points.
-    dst      :: AbstractVector     # Distances between 'xopt' and other interpolation points.
-    τY       :: AbstractVector     # Auxiliary vector of QR factorization.
-    jpvtY    :: AbstractVector     # Auxiliary vector with the permutations of QR factorization.
-    factorsY :: AbstractMatrix     # Auxiliary matrix of QR factorization.
-    Y        :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
+    n        :: Int64
+    m        :: Int64
+    imin     :: Ref{Int64}
+    kopt     :: Ref{Int64}
+    c        :: Ref{Float64}
+    g        :: AbstractVector
+    xbase    :: AbstractVector
+    xopt     :: AbstractVector
+    fval     :: AbstractVector
+    dst      :: AbstractVector
+    τY       :: AbstractVector
+    jpvtY    :: AbstractVector
+    factorsY :: AbstractMatrix
+    Y        :: AbstractMatrix
     
 end
 
 """
-    LinearModel(n)
+    
+    LinearModel(n::Int64)
 
-Create a linear interpolation model for a function (not specified yet)
-of R^n.
+Create a linear interpolation model for a function (not specified yet) of R^{n}.
+
+    - 'n': dimension of the model.
+
+Returns a model of LinearModel type.
 
 """
 LinearModel(n::Int64) = LinearModel(
@@ -45,25 +59,20 @@ LinearModel(n::Int64) = LinearModel(
     zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1),
     zeros(Float64, n), zeros(Float64, n), zeros(Int64, n), zeros(Float64, n, n), zeros(Float64, n, n))
 
-"""
 
-    create_linear_model(n::Int64)
-
-Creates a empty LinearModel object.
-
-    - 'n': dimension of the search space.
-
-Returns a model of LinearModel type.
+( model::LinearModel )( x::AbstractVector ) = model.c[] + dot( model.g, x )
 
 """
-function create_linear_model(
-                                n::Int64
-                            )
 
-    return LinearModel(n, n + 1, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n), zeros(Int64, n), zeros(Float64, n, n), zeros(Float64, n, n))
+    rebuild_model!(model::LinearModel)
 
-end
+Computes the QR factorization of the matrix 'Y', the gradient and the constant of the model.
 
+The function modifies the argument:
+
+    - 'model': model of LinearModel type.
+
+"""
 function rebuild_model!(
                         model::LinearModel
                         )
@@ -185,6 +194,28 @@ function construct_model!(
 
 end
 
+"""
+
+    update_model!(t::Int64, fnew::Float64, xnew::Vector{Float64},
+                    model::LinearModel; trsbox_step::Bool=false)
+
+Updates the model based in the given information.
+
+    - 't': index of the point that must leave the sample set.
+
+    - 'fnew: funtion value of the nw point.
+
+    - 'xnew': n-dimensional vector (new sample point).
+
+The function modifies the argument:
+
+    - 'model': model of LinearModel type.
+
+The optional argument is:
+
+    - 'trsbox_step': Indicates if the step is of trust-region type. Set to 'false' by default.
+
+"""
 function update_model!(
                         t::Int64,
                         fnew::Float64,
@@ -330,6 +361,39 @@ function update_model!(
 
 end
 
+"""
+
+    construct_new_model!(func_list::Array{Function, 1}, imin_idx::Int64, δ::Float64, 
+                            fbase::Float64, xbase::Vector{Float64}, a::Vector{Float64},
+                            b::Vector{Float64}, ao::Vector{Float64}, bo::Vector{Float64},
+                            model::LinearModel)
+
+Constructs the model based in the given information.
+
+    - 'func_list': list containing the functions that determine the objective
+    function fmin.
+
+    - 'imin_idx': index belonging to the set I_{min}('xbase').
+
+    - 'δ': radius of the sample set.
+
+    - 'fbase': objective function value in 'xbase'.
+
+    - 'xbase': n-dimensional vector (origin of the sample set).
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+The function modifies the argument:
+
+    - 'ao': n-dimensional vector with the shifted lower bounds.
+
+    - 'bo': n-dimensional vector with the shifted upper bounds.
+
+    - 'model': model of LinearModel type.
+
+"""
 function construct_new_model!(
                             func_list::Array{Function, 1},
                             imin_idx::Int64, 
@@ -445,8 +509,24 @@ function stationarity_measure(
 
 end
 
-( model::LinearModel )( x::AbstractVector ) = model.c[] + dot( model.g, x )
+"""
 
+    compute_active_set!(model::LinearModel, a::Vector{Float64},
+                        b::Vector{Float64}, active_set::Vector{Bool})
+
+Computes the set of active constraints.
+
+    - 'model': model of LinearModel type.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+The function modifies the argument:
+
+    - 'active_set': boolean n-dimensional vector with the active constraints.
+
+"""
 function compute_active_set!(
                         model::LinearModel,
                         a::Vector{Float64},
@@ -470,6 +550,35 @@ function compute_active_set!(
 
 end
 
+"""
+
+    trsbox!(model::LinearModel, Δ::Float64, a::Vector{Float64}, b::Vector{Float64},
+                active_set::Vector{Bool}, x::Vector{Float64}, d::Vector{Float64},
+                s::Vector{Float64})
+
+Computes a descent direction for the model based on TRSBOX routine of BOBYQA.
+
+    - 'model': model of LinearModel type.
+
+    - 'Δ': trust-region radius.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+The function modifies the argument:
+
+    - 'active_set': boolean n-dimensional vector with the active constraints.
+
+    - 'x': n-dimensional vector (candidate for new sampling point 'x': 'xopt' + 'd').
+
+    - 'd': n-dimensional vector (descent direction).
+
+    - 's': n-dimensional vector (auxiliary vector for workspace).
+
+Returns a flag indicating the stopping criteria.
+
+"""
 function trsbox!(
                     model::LinearModel,
                     Δ::Float64,
@@ -656,6 +765,23 @@ function trsbox!(
     
 end
 
+"""
+
+    choose_index_trsbox(model::LinearModel, xnew::Vector{Float64}, v::Vector{Float64})
+
+Chooses the point that must leave the sampling set for trust-region steps.
+
+    - 'model': model of LinearModel type.
+
+    - 'xnew': n-dimensional vector (new sample point).
+
+The function modifies the argument:
+    
+    - 's': n-dimensional vector (auxiliary vector for workspace).
+
+Returns an index 't' which indicates the point that must leave the sample set.
+
+"""
 function choose_index_trsbox(
                                 model::LinearModel,
                                 xnew::Vector{Float64},
@@ -686,6 +812,24 @@ function choose_index_trsbox(
 
 end
 
+
+"""
+
+    lagrange_pol_t(model::LinearModel, idx_t::Int64, ∇Λ_t::Vector{Float64}, y::Vector{Float64})
+
+Computes the t-th Lagrange polynomial at 'y', i.e., computes Λ_{t}(y).
+
+    - 'model': model of LinearModel type.
+
+    - 'idx_t': index of the Lagrange polynomial.
+
+    - '∇Λ_t': n-dimensional vector (gradient of the t-th Lagrange polynomial).
+
+    - 'y': n-dimensional vector (point of interest).
+
+Returns the function value Λ_{t}(y).
+
+"""
 function lagrange_pol_t(
                         model::LinearModel,
                         idx_t::Int64,
@@ -705,6 +849,39 @@ function lagrange_pol_t(
 
 end
 
+"""
+
+    altmov!(model::LinearModel, idx_t::Int64, Δ::Float64, a::Vector{Float64}, 
+                b::Vector{Float64}, x::Vector{Float64}, d::Vector{Float64},
+                v::Vector{Float64}, w::Vector{Float64}, altmov_set::Vector{Bool})
+
+Calculates a direction to improve the poisedness of the sample set based on ALTMOV routine of BOBYQA.
+
+    - 'model': model of LinearModel type.
+
+    - 'idx_t': index of the point that must leave the sample set.
+
+    - 'Δ': trust-region radius.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+The function modifies the argument:
+
+    - 'x': n-dimensional vector (candidate for new sampling point 'x': 'xopt' + 'd').
+
+    - 'd': n-dimensional vector (descent direction).
+
+    - 'v': n-dimensional vector (auxiliary vector for workspace).
+
+    - 'w': n-dimensional vector (auxiliary vector for workspace).
+
+    - 'altmov_set': boolean n-dimensional vector with the active constraints.
+
+Returns a flag indicating the stopping criteria.
+
+"""
 function altmov!(
                     model::LinearModel,
                     idx_t::Int64,
@@ -885,6 +1062,41 @@ function altmov!(
 
 end
 
+"""
+
+    altmov_cauchy!(model::LinearModel, idx_t::Int64, Δ::Float64, a::Vector{Float64}, 
+                    b::Vector{Float64}, ∇Λ_t::Vector{Float64}, s::Vector{Float64},
+                    z::Vector{Float64}, active_set::Vector{Bool}; sym::Bool=false)
+
+Calculates a direction to improve the poisedness of the sample set based on the Cauchy step of ALTMOV routine from BOBYQA.
+
+    - 'model': model of LinearModel type.
+
+    - 'idx_t': index of the point that must leave the sample set.
+
+    - 'Δ': trust-region radius.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - '∇Λ_t': n-dimensional vector (gradient of the t-th Lagrange polynomial).
+
+The function modifies the argument:
+
+    - 's': n-dimensional vector (direction).
+
+    - 'z': n-dimensional vector (candidate for new sampling point 'x': 'xopt' + 's').
+
+    - 'active_set': boolean n-dimensional vector with the active constraints.
+
+The optional argument is:
+
+    - 'sym': indicates if it is calculated based on the symetric direction of '∇Λ_t'. Set to 'false' by default.
+
+Returns the function value of the t-th Lagrange polynomial in 'z', i.e., Λ_t(z).
+
+"""
 function altmov_cauchy!(
                         model::LinearModel,
                         idx_t::Int64,
@@ -1027,6 +1239,29 @@ function altmov_cauchy!(
 
 end
 
+"""
+    compute_theta_linear!(model::LinearModel, a::Vector{Float64}, b::Vector{Float64},
+                            d::Vector{Float64}, proj_d::Vector{Float64}, s::Vector{Float64})
+
+Calculates the parameter θ that satisfies 'a' ≤ 'xopt' + 'd(θ)' ≤ 'b', and 'g'd(θ)' < 0.0, in 'trsbox!' routine.
+
+    - 'model': model of LinearModel type.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'd': n-dimensional vector (direction).
+
+    - 'proj_d': n-dimensional vector (projection of the direction 'd' on the set of active constraints).
+
+The function modifies the argument:
+
+    - 's': n-dimensional vector (new direction).
+
+Returns 'true' if the parameter 'θQ' is chosen, and 'false' otherwise.
+
+"""
 function compute_theta_linear!(
                                 model::LinearModel, 
                                 a::Vector{Float64},
