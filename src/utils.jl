@@ -375,7 +375,7 @@ function print_info(
 
             print_warning(exit_flag)
 
-            if model.kopt[] != 0
+            if !( model.kopt[] == 0 || full_calc ) 
 
                 print_warning(:better_point)
 

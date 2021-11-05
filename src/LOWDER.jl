@@ -456,17 +456,41 @@ module LOWDER
 
         #---------------------- Preparations to finish execution  ----------------------
 
-        if ( it_flag == :nonspecified ) || ( it_flag == :criticality )
+        if ( it_flag == :nonspecified ) || ( it_flag == :criticality ) || ( exit_flag == :numerical_error )
 
             verif_new_info = false
 
         end
 
+        # Verifies the information obtained in the last iteration.
         if verif_new_info && ( fi_x < model.fval[ model.kopt[] + 1 ] )
 
-            @. model.xopt = x
-            model.fval[ model.kopt[] ] = fi_x
+            # Calculates the value of fmin if there is enough computational budget and it has not already been calculated. 
+            if ( ( maxfun - nf ) ≥ ( r - 1 ) ) && full_calc == false
 
+                fi_x, imin_idx = fmin_partial_eval!( func_list, r, model.imin[], fi_x, x, imin_set )
+                nf += r - 1
+                full_calc = true
+
+                # Verifies if 'model.imin' belongs to the 'imin_set' of the new point.
+                if !( imin_set[ model.imin[] ] )
+
+                    model.imin[] = imin_idx
+
+                end
+
+                # Updates 'model.xopt' and its function value.
+                @. model.xopt = x
+                model.fval[ model.kopt[] ] = fi_x
+
+            else
+
+                # Updates 'model.xopt' and its function value.
+                @. model.xopt = x
+                model.fval[ model.kopt[] ] = fi_x
+
+            end
+            
         end
         
         # Creates the LOWDEROutput.
