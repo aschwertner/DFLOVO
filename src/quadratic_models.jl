@@ -4,34 +4,91 @@
 
 export QuadraticModel
 
+"""
+
+Define the type for quadratic models.
+
+    - 'n': model dimension.
+    - 'm': number of interpolation points.
+    - 'imin': index of the function interpolated.
+    - 'kopt': index of the best point so far in 'Y'.
+    - 'g': gradient of the model.
+    - 'gopt': gradient of the model in 'xopt'.
+    - 'hq': holds the explicit second derivatives of the quadratic model.
+    - 'pq': holds parameters of the implicit second derivatives of the quadratic model.
+    - 'xbase': origin of the sample set and center of the model.
+    - 'xopt': best point so far (in terms of function values).
+    - 'fval': set of the function values of the interpolation points.
+    - 'dst': distances between 'xopt' and other interpolation points.
+    - 'Y': set of interpolation points, shifted from the center of the sample set 'xbase'.
+    - 'BMAT': holds the elements of 'Ξ', with the exception of its first column,
+            and the elements of 'Υ', with the exception of its first row and column.
+    - 'ZMAT': holds the elements of 'Z', from the factorization 'Ω = ZZ^T'.
+
+"""
 struct QuadraticModel <: AbstractModel
 
-    n     :: Int64              # Model dimension.
-    m     :: Int64              # Number of interpolation points.
-    imin  :: Ref{Int64}         # Index of the selected function in 'func_list'.
-    kopt  :: Ref{Int64}         # Index of the best point so far in 'Y'.
-    g     :: AbstractVector     # Gradient of the model.
-    gopt  :: AbstractVector     # Gradiente of the model in 'xopt'
-    hq    :: AbstractVector     # Holds the explicit second derivatives of the quadratic model.
-    pq    :: AbstractVector     # Holds parameters of the implicit second derivatives of the quadratic model.
-    xbase :: AbstractVector     # Origin of the sample set.
-    xopt  :: AbstractVector     # Best point so far (in terms of function values).
-    fval  :: AbstractVector     # Set of the function values of the interpolation points.
-    dst   :: AbstractVector     # Distances between 'xopt' and other interpolation points.
-    Y     :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
-    BMAT  :: AbstractMatrix     # Holds the elements of 'Ξ', with the exception of its first column, 
-                                # and the elements of 'Υ', with the exception of its first row and column.
-    ZMAT  :: AbstractMatrix     # Holds the elements of 'Z', from the factorization 'Ω = ZZ^T'.
+    n     :: Int64
+    m     :: Int64
+    imin  :: Ref{Int64}
+    kopt  :: Ref{Int64}
+    g     :: AbstractVector
+    gopt  :: AbstractVector
+    hq    :: AbstractVector
+    pq    :: AbstractVector
+    xbase :: AbstractVector
+    xopt  :: AbstractVector
+    fval  :: AbstractVector
+    dst   :: AbstractVector
+    Y     :: AbstractMatrix
+    BMAT  :: AbstractMatrix
+    ZMAT  :: AbstractMatrix
 
 end
 
+
+"""
+    
+    QuadraticModel(n::Int64, m::Int64)
+
+Create a quadratic interpolation model for a function (not specified yet) of R^{n}, with 'm' interpolation points.
+
+    - 'n': dimension of the model.
+    - 'm': number of interpolation points.
+
+Returns a model of QuadraticModel type.
+
+"""
 QuadraticModel(n::Int64, m::Int64) = QuadraticModel(
     n, m, Ref{Int64}(), Ref{Int64}(), 
     zeros(Float64, n), zeros(Float64, n), zeros(Float64, convert(Int64, n * ( n + 1 ) / 2) ), 
     zeros(Float64, m), zeros(Float64, n), zeros(Float64, n), zeros(Int64, m), 
     zeros(Float64, m - 1), zeros(Float64, m - 1, n), zeros(Float64, n + m, n), zeros(Float64, m, m - n - 1) )
 
+"""
 
+    reconstruct_original_point!(model::AbstractModel, idx::Int64, a::Vector{Float64}, b::Vector{Float64},
+                                ao::Vector{Float64}, bo::Vector{Float64}, x::Vector{Float64})
+    
+Constructs the model based in the given information.
+
+    - 'model': model of QuadraticModel type.
+
+    - 'idx': position of the point in 'Y' set.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'ao': n-dimensional vector with the shifted lower bounds.
+
+    - 'bo': n-dimensional vector with the shifted upper bounds.
+
+The function modifies the argument:
+
+    - 'x': n-dimensional vector (point of interest).    
+
+"""
 function reconstruct_original_point!(
                                     model::AbstractModel,
                                     idx::Int64,
@@ -62,6 +119,35 @@ function reconstruct_original_point!(
 
 end
 
+"""
+
+    construct_model!(func_list::Array{Function, 1}, imin_idx::Int64, 
+                        δ::Float64, fbase::Float64, xbase::Vector{Float64},
+                        ao::Vector{Float64}, bo::Vector{Float64},
+                        model::QuadraticModel)
+
+Constructs the model based in the given information.
+
+    - 'func_list': list containing the functions that determine the objective
+    function fmin.
+
+    - 'imin_idx': index belonging to the set I_{min}('xbase').
+
+    - 'δ': radius of the sample set.
+
+    - 'fbase': objective function value in 'xbase'.
+
+    - 'xbase': n-dimensional vector (origin of the sample set).
+
+    - 'ao': n-dimensional vector with the shifted lower bounds.
+
+    - 'bo': n-dimensional vector with the shifted upper bounds.
+
+The function modifies the argument:
+
+    - 'model': model of QuadraticModel type.
+
+"""
 function construct_model!(
                             func_list::Array{Function, 1},
                             imin_idx::Int64, 
@@ -265,6 +351,17 @@ function construct_model!(
 
 end
 
+"""
+
+    update_gopt!(model::QuadraticModel, first_call::Bool)
+
+Computes the gradient of the model in 'xopt'.
+
+    - 'model': model of QuadraticModel type.
+    
+    - 'first_call' boolean that indicates if the model was newly created.
+
+"""
 function update_gopt!( 
                         model::QuadraticModel,
                         first_call::Bool
@@ -281,7 +378,7 @@ function update_gopt!(
 
         for k=1:( model.m - 1 )
 
-            tmp = model.pq[k] * dot( model.Y[k, :], model.xopt )
+            tmp = model.pq[k] * dot( model.Y[k, :], model.Y[model.kopt[], :] )
 
             for i=1:model.n
 
@@ -295,6 +392,21 @@ function update_gopt!(
 
 end
 
+"""
+
+    mul_hess_vec!(model::QuadraticModel, vec::Vector{Float64}, x::Vector{Float64})
+
+Calculates the product between the model's Hessian and a vector, i.e., computes H * vec.
+
+    - 'model': model of QuadraticModel type.
+
+    - 'vec': n-dimensional vector.
+
+The function modifies the argument:
+
+    - 'x': n-dimensional vector (solution)
+
+"""
 function mul_hess_vec!(
                         model::QuadraticModel,
                         vec::Vector{Float64},
@@ -324,6 +436,21 @@ function mul_hess_vec!(
 
 end
 
+"""
+
+    mul_vec_hess_vec!(model::QuadraticModel, v::Vector{Float64}, w::Vector{Float64})
+
+Computes the product v^{T} * H * w, where H is the hessian of the model.
+
+    - 'model': model of QuadraticModel type.
+
+    - 'v': n-dimensional vector.
+
+    - 'w': n-dimensional vector.
+
+Return the value of the product.
+
+"""
 function mul_vec_hess_vec!(
                             model::QuadraticModel,
                             v::Vector{Float64},
@@ -354,6 +481,22 @@ function mul_vec_hess_vec!(
 
 end
 
+"""
+
+    stationarity_measure(model::LinearModel, a::Vector{Float64}, 
+                            b::Vector{Float64})
+
+Calculates the stationarity measure π_{k} = || P_{Ω}( x_{k} - gopt_{k} ) - x_{k} ||.
+
+    - 'model': model of QuadraticModel type. 
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+Returns the stationarity measure.
+
+"""
 function stationarity_measure(
                                 model::QuadraticModel,
                                 a::Vector{Float64}, 
@@ -371,6 +514,24 @@ function stationarity_measure(
 
 end
 
+"""
+
+    compute_active_set!(model::LinearModel, a::Vector{Float64},
+                        b::Vector{Float64}, active_set::Vector{Bool})
+
+Computes the set of active constraints.
+
+    - 'model': model of QuadraticModel type.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+The function modifies the argument:
+
+    - 'active_set': boolean n-dimensional vector with the active constraints.
+
+"""
 function compute_active_set!(
                         model::QuadraticModel,
                         a::Vector{Float64},
