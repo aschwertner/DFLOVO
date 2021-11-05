@@ -25,17 +25,12 @@ struct QuadraticModel <: AbstractModel
 
 end
 
-function create_quadratic_model(
-                                n::Int64,
-                                m::Int64
-                                )
+QuadraticModel(n::Int64, m::Int64) = QuadraticModel(
+    n, m, Ref{Int64}(), Ref{Int64}(), 
+    zeros(Float64, n), zeros(Float64, n), zeros(Float64, convert(Int64, n * ( n + 1 ) / 2) ), 
+    zeros(Float64, m), zeros(Float64, n), zeros(Float64, n), zeros(Int64, m), 
+    zeros(Float64, m - 1), zeros(Float64, m - 1, n), zeros(Float64, n + m, n), zeros(Float64, m, m - n - 1) )
 
-    return QuadraticModel( n, m, Ref{Int64}(), Ref{Int64}(), 
-                            zeros(Float64, n), zeros(Float64, n), zeros(Float64, convert(Int64, n * ( n + 1 ) / 2) ), 
-                            zeros(Float64, m), zeros(Float64, n), zeros(Float64, n), zeros(Int64, m), 
-                            zeros(Float64, m - 1), zeros(Float64, m - 1, n), zeros(Float64, n + m, n), zeros(Float64, m, m - n - 1) )
-
-end
 
 function reconstruct_original_point!(
                                     model::AbstractModel,
