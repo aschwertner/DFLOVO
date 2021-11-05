@@ -2,6 +2,22 @@
 # Set of useful functions related to LOWDEROutput struct.
 #-------------------------------------------------------------------------------
 
+"""
+
+    create_output(model::AbstractModel, exit_flag::Symbol, full_calc::Bool,
+                    nit::Int64, nf::Int64)
+
+Creates a output for LOWDER algorithm.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+    - 'exit_flag': exit flag of algorithm.
+    - 'full_calc': boolean that indicates if fmin was calculated for the current 'xopt'.
+    - 'nit': number of iterations.
+    - 'nf': number of funtion calls.
+
+Returns a object of LOWDEROutput type.
+
+"""
 function create_output(
                         model::AbstractModel,
                         exit_flag::Symbol,
@@ -22,6 +38,15 @@ function create_output(
 
 end
 
+"""
+
+    show_output(output::LOWDEROutput)
+
+Shows information about the completion of LOWDER execution on the user's screen.
+
+    - 'output': LOWDEROutput object.
+
+"""
 function show_output(
                         output::LOWDEROutput
                         )
