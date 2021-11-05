@@ -13,7 +13,7 @@ Creates a output for LOWDER algorithm.
     - 'exit_flag': exit flag of algorithm.
     - 'full_calc': boolean that indicates if fmin was calculated for the current 'xopt'.
     - 'nit': number of iterations.
-    - 'nf': number of funtion calls.
+    - 'nf': number of function evaluations.
 
 Returns a object of LOWDEROutput type.
 
