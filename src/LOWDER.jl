@@ -121,7 +121,7 @@ module LOWDER
         # Create an empty structure called 'model', which can hold a linear or quadratic model.
         if n == (m - 1)
 
-            model = create_linear_model(n)
+            model = LinearModel(n)
 
         end
 

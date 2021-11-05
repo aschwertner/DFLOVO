@@ -30,9 +30,6 @@ struct LinearModel <: AbstractModel
     jpvtY    :: AbstractVector     # Auxiliary vector with the permutations of QR factorization.
     factorsY :: AbstractMatrix     # Auxiliary matrix of QR factorization.
     Y        :: AbstractMatrix     # Set of interpolation points, shifted from the center of the sample set 'xbase'.
-
-    # TODO: check if m != n + 1
-    # TODO: check if the dimensions of the allocated vectors and matrices match
     
 end
 
@@ -43,10 +40,10 @@ Create a linear interpolation model for a function (not specified yet)
 of R^n.
 
 """
-LinearModel(n) = LinearModel(
-    n, n + 1, Ref{Int64}(), Ref{Int64}(),
-    Ref{Float64}(), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n),
-    zeros(Float64, n + 1), zeros(Float64, n), zeros(Float64, n), zeros(Int64, n), zeros(Float64, n, n), zeros(Float64, n, n))
+LinearModel(n::Int64) = LinearModel(
+    n, n + 1, Ref{Int64}(), Ref{Int64}(), Ref{Float64}(), 
+    zeros(Float64, n), zeros(Float64, n), zeros(Float64, n), zeros(Float64, n + 1),
+    zeros(Float64, n), zeros(Float64, n), zeros(Int64, n), zeros(Float64, n, n), zeros(Float64, n, n))
 
 """
 
