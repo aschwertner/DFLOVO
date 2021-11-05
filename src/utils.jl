@@ -17,7 +17,7 @@ Checks whether the bounds satisfy the conditions 'b' >= 'a' + 2 * 'δ'.
 
     - 'b': n-dimensional vector with the upper bounds.
 
-Returns a Boolean value.
+Returns a boolean value.
 
 """
 function verify_initial_room(
@@ -120,66 +120,6 @@ function correct_guess_bounds!(
 
 end
 
-"""
-
-    reconstruct_original_point!(idx::Int64, n::Int64, a::Vector{Float64}, 
-                                b::Vector{Float64}, ao::Vector{Float64}, 
-                                bo::Vector{Float64}, xbase::Vector{Float64},
-                                Y::Matrix{Float64}, x::Vector{Float64})
-
-Reconstructs the original point given its position 'idx' in the sample set  'Y'.
-
-    - 'idx': index of the point in the sample set.
-
-    - 'n': dimension of the search space.
-
-    - 'a': n-dimensional vector with the lower bounds.
-
-    - 'b': n-dimensional vector with the upper bounds.
-
-    - 'ao': n-dimensional vector with the shifted lower bounds.
-
-    - 'bo': n-dimensional vector with the shifted upper bounds.
-
-    - 'xbase': n-dimensional vector (origin of the sample set).
-
-    - 'Y': (n x m)-dimensional matrix (set of sample points).
-
-The function modifies the argument:
-
-    - 'x': n-dimensional vector.
-
-"""
-function reconstruct_original_point!(
-                                        idx::Int64,
-                                        n::Int64,
-                                        a::Vector{Float64}, 
-                                        b::Vector{Float64},
-                                        ao::Vector{Float64}, 
-                                        bo::Vector{Float64},
-                                        xbase::Vector{Float64},
-                                        Y::Matrix{Float64},
-                                        x::Vector{Float64}
-                                        )
-    
-    for i=1:n
-
-        x[i] = min( max( a[i], xbase[i] + Y[i, idx] ), b[i] )
-
-        if Y[i, idx] == ao[i]
-
-            x[i] = a[i]
-
-        elseif Y[i, idx] == bo[i]
-
-            x[i] = b[i]
-
-        end
-
-    end
-    
-end
-
 function relative_reduction(
                             model::AbstractModel,
                             func_list::Array{Function, 1},
@@ -209,6 +149,60 @@ function relative_reduction!(
     ρ = real_red / pred_red
 
     return ρ, real_red, fmin_y, idx_y
+
+end
+
+"""
+
+    reconstruct_original_point!(model::AbstractModel, idx::Int64, a::Vector{Float64}, b::Vector{Float64},
+                                ao::Vector{Float64}, bo::Vector{Float64}, x::Vector{Float64})
+    
+Constructs the model based in the given information.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+    - 'idx': position of the point in 'Y' set.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'ao': n-dimensional vector with the shifted lower bounds.
+
+    - 'bo': n-dimensional vector with the shifted upper bounds.
+
+The function modifies the argument:
+
+    - 'x': n-dimensional vector (point of interest).    
+
+"""
+function reconstruct_original_point!(
+                                    model::AbstractModel,
+                                    idx::Int64,
+                                    a::Vector{Float64},
+                                    b::Vector{Float64},
+                                    ao::Vector{Float64},
+                                    bo::Vector{Float64},
+                                    x::Vector{Float64}
+                                    )
+
+    for i = 1:model.n
+     
+        if model.Y[idx, i] == ao[i]
+
+            x[i] = a[i]
+
+        elseif model.Y[idx, i] == bo[i]
+
+            x[i] = b[i]
+
+        else
+
+            x[i] = min( max( a[i], model.xbase[i] + model.Y[idx, i] ), b[i] )
+
+        end
+
+    end
 
 end
 

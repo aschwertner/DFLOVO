@@ -67,60 +67,6 @@ QuadraticModel(n::Int64, m::Int64) = QuadraticModel(
 
 """
 
-    reconstruct_original_point!(model::AbstractModel, idx::Int64, a::Vector{Float64}, b::Vector{Float64},
-                                ao::Vector{Float64}, bo::Vector{Float64}, x::Vector{Float64})
-    
-Constructs the model based in the given information.
-
-    - 'model': model of QuadraticModel type.
-
-    - 'idx': position of the point in 'Y' set.
-
-    - 'a': n-dimensional vector with the lower bounds.
-
-    - 'b': n-dimensional vector with the upper bounds.
-
-    - 'ao': n-dimensional vector with the shifted lower bounds.
-
-    - 'bo': n-dimensional vector with the shifted upper bounds.
-
-The function modifies the argument:
-
-    - 'x': n-dimensional vector (point of interest).    
-
-"""
-function reconstruct_original_point!(
-                                    model::AbstractModel,
-                                    idx::Int64,
-                                    a::Vector{Float64},
-                                    b::Vector{Float64},
-                                    ao::Vector{Float64},
-                                    bo::Vector{Float64},
-                                    x::Vector{Float64}
-                                    )
-
-    for i = 1:model.n
-     
-        if model.Y[idx, i] == ao[i]
-
-            x[i] = a[i]
-
-        elseif model.Y[idx, i] == bo[i]
-
-            x[i] = b[i]
-
-        else
-
-            x[i] = min( max( a[i], model.xbase[i] + model.Y[idx, i] ), b[i] )
-
-        end
-
-    end
-
-end
-
-"""
-
     construct_model!(func_list::Array{Function, 1}, imin_idx::Int64, 
                         δ::Float64, fbase::Float64, xbase::Vector{Float64},
                         ao::Vector{Float64}, bo::Vector{Float64},
