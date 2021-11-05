@@ -230,7 +230,15 @@ module LOWDER
                 status_flag = trsbox!(model, Δ, a, b, active_set, x, d, aux_v)
                 norm_d = norm( d )
 
-                if norm_d ≥ 0.5 * Δ
+                # Verifies if 'trsbox' returns a unexpected direction.
+                if norm_d == NaN
+
+                    # Sets iteration and exit flags
+                    it_flag = :trust_region
+                    exit_flag = :numerical_error
+                    break
+
+                elseif norm_d ≥ 0.5 * Δ
 
                     #------------------------------- Step acceptance -------------------------------
 
@@ -276,7 +284,12 @@ module LOWDER
                 if ρ < η1
 
                     δ *= τ1
-                    Δ *= τ1
+
+                    if ( max_distance( model ) ≤ δold )
+                    
+                        Δ *= τ1
+
+                    end
 
                 elseif ( ρ > η2 ) && ( norm_d ≈ Δ )
 
@@ -326,6 +339,14 @@ module LOWDER
                 # Computes the new interpolation point.
                 status_flag = altmov!(model, t, δold, a, b, x, d, aux_v, aux_w, active_set)
 
+                # Verifies if 'altmov' returns a unexpected direction.
+                if norm( d ) == NaN
+
+                    exit_flag = :numerical_error
+                    break
+
+                end
+
                 # Computes the new function value.
                 fi_x = fi_eval(func_list, model.imin[], x)
 
@@ -348,7 +369,7 @@ module LOWDER
                 exit_flag = :max_evaluations
                 break
 
-            elseif ( δ ≤ δmin ) && ( max_distance( model ) ≤ δ )
+            elseif ( δ ≤ δmin ) && ( max_distance( model ) ≤ δold )
 
                 exit_flag = :small_sampling_radius
                 break
