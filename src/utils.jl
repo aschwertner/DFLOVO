@@ -120,6 +120,25 @@ function correct_guess_bounds!(
 
 end
 
+"""
+
+    relative_reduction(model::AbstractModel, func_list::Array{Function, 1},
+                        pred_red::Float64, y::Vector{Float64})
+
+Computes the simplified relative reduction (using f_{i} instead of fmin) in the point 'y'.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+    - 'func_list': list containing the functions that determine the objective
+    function fmin.
+
+    - 'pred_red': precalculated predicted reduction.
+
+    - 'y': n-dimensional vector (point of interest).
+
+Returns the value of the simplified relative reduction, the real reduction, the value of f_i(y) and the index 'model.imin'.
+
+"""
 function relative_reduction(
                             model::AbstractModel,
                             func_list::Array{Function, 1},
@@ -135,6 +154,31 @@ function relative_reduction(
 
 end
 
+"""
+
+    relative_reduction(model::AbstractModel, func_list::Array{Function, 1}, r::Int64,
+                        pred_red::Float64, y::Vector{Float64}, imin_set::Vector{Bool})
+
+Computes the relative reduction obtained in the point 'y'.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+    - 'func_list': list containing the functions that determine the objective
+    function fmin.
+
+    - 'r': number of functions that make up the objective function fmin.
+
+    - 'pred_red': precalculated predicted reduction.
+
+    - 'y': n-dimensional vector (point of interest).
+
+The function modifies the argument:
+
+    - 'imin_set': boolean vector with the indexes belonging to the I_{min}(y) set.
+
+Returns the value of the relative reduction, the real reduction, the value of fmin(y) and an index 'idx_y' belonging to Imin(y).
+
+"""
 function relative_reduction!(
                             model::AbstractModel,
                             func_list::Array{Function, 1},
@@ -254,6 +298,46 @@ function print_warning(
 
 end
 
+"""
+
+    print_iteration(it_flag::Symbol, status_flag::Symbol, full_calc::Bool, nit::Int64,
+                        nf::Int64, imin_idx::Int64, δ::Float64, Δ::Float64, π::Float64,
+                        ρ::Float64, pred_red::Float64, real_red::Float64, fopt::Float64,
+                        xopt::Vector{Float64}, d::Vector{Float64})
+
+Prints information about the iterations.
+
+    - 'it_flag': iteration flag.
+
+    - 'status_flag': status flag.
+
+    - 'full_calc': indicates if ρ was full calculated.
+
+    - 'nit': number of iterations.
+
+    - 'nf': number of function evaluations.
+
+    - 'imin_idx': index corresponding to the available function value.
+
+    - 'δ': sample set radius.
+
+    - 'Δ': trust-region radius.
+
+    - 'π': stationarity measure.
+ 
+    - 'ρ': relative reduction.
+
+    - 'pred_red': predicted reduction.
+
+    - 'real_red': real reduction.
+
+    - 'fopt': function value in 'xopt'
+
+    - 'xopt': best point so far.
+
+    - 'd': last computed direction.
+
+"""
 function print_iteration(
                             it_flag::Symbol,
                             status_flag::Symbol,
@@ -342,32 +426,65 @@ function print_iteration(
 
 end
 
+"""
+
+    print_info(model::AbstractModel, output::LOWDEROutput, exit_flag::Symbol, it_flag::Symbol,
+                status_flag::Symbol, verbose::Int64, nit::Int64, nf::Int64, δ::Float64, Δ::Float64,
+                π::Float64, full_calc::Bool, pred_red::Float64, real_red::Float64, ρ::Float64,
+                d::Vector{Float64})
+
+Prints information about the last iteration of LOWDER.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+    - 'output': object of LOWDEROutput type.
+
+    - 'it_flag': iteration flag.
+
+    - 'status_flag': status flag.
+
+    - 'full_calc': indicates if fmin was calculated at 'xopt'.
+
+    - 'verbose': level of vebosity.
+
+    - 'δ': sample set radius.
+
+    - 'Δ': trust-region radius.
+
+    - 'π': stationarity measure.
+
+    - 'ρ': relative reduction.
+ 
+    - 'pred_red': predicted reduction.
+
+    - 'real_red': real reduction.
+
+    - 'd': last computed direction.
+
+"""
 function print_info(
                     model::AbstractModel,
                     output::LOWDEROutput,
-                    exit_flag::Symbol,
                     it_flag::Symbol,
                     status_flag::Symbol,
+                    full_calc::Bool,
                     verbose::Int64,
-                    nit::Int64,
-                    nf::Int64,
                     δ::Float64,
                     Δ::Float64,
                     π::Float64,
-                    full_calc::Bool,
+                    ρ::Float64,
                     pred_red::Float64,
                     real_red::Float64,
-                    ρ::Float64,
                     d::Vector{Float64}
                     )
     
     if verbose != 0
 
-        print_iteration(it_flag, status_flag, full_calc, nit, nf, model.imin[], δ, Δ, π, ρ, pred_red, real_red, model.fval[model.kopt[] + 1], model.xopt, d)
+        print_iteration(it_flag, status_flag, full_calc, output.iter, output.nf, output.index, δ, Δ, π, ρ, pred_red, real_red, output.f, output.solution, d)
 
         if verbose ≥ 2
 
-            print_warning(exit_flag)
+            print_warning(output.status)
 
             if !( model.kopt[] == 0 || full_calc ) 
 

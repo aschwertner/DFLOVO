@@ -158,7 +158,7 @@ module LOWDER
             output = create_output(model, exit_flag, full_calc, nit, nf)
 
             # Prints information about the iteration, exit flag and LOWDEROutput.
-            print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δ, Δ, π, full_calc, pred_red, real_red, ρ, d)
+            print_info(model, output, it_flag, status_flag, full_calc, verbose, δ, Δ, π, ρ, pred_red, real_red, d)
 
             if saveinfo
     
@@ -497,7 +497,7 @@ module LOWDER
         output = create_output(model, exit_flag, full_calc, nit, nf)
 
         # Prints information about the iteration, exit flag and LOWDEROutput.
-        print_info(model, output, exit_flag, it_flag, status_flag, verbose, nit, nf, δold, Δold, π, full_calc, pred_red, real_red, ρ, d)
+        print_info(model, output, it_flag, status_flag, full_calc, verbose, δold, Δold, π, ρ, pred_red, real_red, d)
 
         if saveinfo
     
