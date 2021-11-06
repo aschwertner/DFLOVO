@@ -1092,7 +1092,7 @@ The function modifies the argument:
 
 The optional argument is:
 
-    - 'sym': indicates if it is calculated based on the symetric direction of '∇Λ_t'. Set to 'false' by default.
+    - 'sym': indicates if it is calculated based on the symmetric direction of '∇Λ_t'. Set to 'false' by default.
 
 Returns the function value of the t-th Lagrange polynomial in 'z', i.e., Λ_t(z).
 

@@ -504,6 +504,26 @@ function print_info(
 
 end
 
+"""
+
+    projection_active_set!(v::Vector{Float64}, active_set::Vector{Bool}, 
+                            proj_v::Vector{Float64}; sym::Bool=false)
+
+Computes the projection of the vector 'v' on the set of active constraints
+
+    - 'v': n-dimensional vector (point of interest).
+
+    - 'active_set': boolean n-dimensional vector with the active constraints.
+
+The function modifies the argument:
+
+    - 'proj_v': n-dimensional vector (projection of 'v').
+
+The optional argument is:
+
+    - 'sym': indicates if it is calculated based on the symmetric direction of 'v'. Set to 'false' by default.
+
+"""
 function projection_active_set!(
                                 v::Vector{Float64}, 
                                 active_set::Vector{Bool}, 
@@ -535,6 +555,28 @@ function projection_active_set!(
 
 end
 
+"""
+
+    step_projection!(model::AbstractModel, a::Vector{Float64},
+                        b::Vector{Float64}, x::Vector{Float64},
+                        d::Vector{Float64})
+
+Projects 'x' := 'xopt' + 'd' over the box constraints and
+modifies 'd' to conform to the new point 'x'. 
+
+    - 'model': model of LinearModel or QuadraticModel type.
+    
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+The function modifies the argument:
+
+    - 'x': n-dimensional vector (point of interest).
+
+    - 'd': n-dimensional vector (direction).
+
+"""
 function step_projection!(
                             model::AbstractModel,
                             a::Vector{Float64},
@@ -552,6 +594,29 @@ function step_projection!(
 
 end
 
+"""
+
+    compute_alpha_linear(Δ::Float64, a::Vector{Float64}, b::Vector{Float64},
+                            x::Vector{Float64}, d::Vector{Float64}, s::Vector{Float64})
+
+Calculates the step length α for 'trsbox!' routine if the model is linear.
+
+    - 'Δ': trust-region radius.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'x': n-dimensional vector (current point).
+
+    - 'd': n-dimensional vector (first direction).
+
+    - 's': n-dimensional vector (second direction).
+
+Returns the value of α, a boolean indicating whether α_Δ is chosen, 
+and an index indicating which box constraint is met in the case where α_B is chosen. 
+
+"""
 function compute_alpha_linear(
                                 Δ::Float64,
                                 a::Vector{Float64},
@@ -600,7 +665,7 @@ function compute_alpha_linear(
 
     if ( α_Δ == NaN ) || ( α_Δ < 0.0 )
 
-        return α_B, 2, idx
+        return α_B, false, idx
 
     else
 
@@ -620,6 +685,27 @@ function compute_alpha_linear(
 
 end
 
+"""
+
+    new_search_direction!(pdTpd::Float64, pdTpg::Float64, pgTpg::Float64,
+                            proj_d::Vector{Float64}, proj_grad::Vector{Float64})
+
+Calculates a new search direction for the 'trsbox!' routine.
+
+    - 'pdTpd': product of the direction 'd' by itself.
+
+    - 'pdTpg': product of the projection of the direction 'd' by the gradient vector
+                of the model evaluated in 'xopt'. 
+
+    - 'pgTpg': product of the projection of the gradient vector of the model evaluated in 'xopt' by itself. 
+
+    - 'proj_d': projection of the search direction 'd'
+
+The function modifies the argument:
+
+    - 'proj_grad': projection of the gradient of the model in 'xopt'.
+
+"""
 function new_search_direction!(
                                 pdTpd::Float64,
                                 pdTpg::Float64,
@@ -704,6 +790,24 @@ function new_search_direction!(
 
 end
 
+"""
+
+    solve_quadratic!(a::Float64, b::Float64, c::Float64,
+                        roots::Vector{Any})
+
+Calculates the roots of the quadratic equation a * x ^ 2 + b * x + c = 0.
+
+    - 'a': quadratic term.
+
+    - 'b': linear term.
+
+    - 'c': constant.
+
+The function modifies the argument:
+
+    - 'roots': vector with the roots of the quadratic equation.
+
+"""
 function solve_quadratic!(
                             a::Float64,
                             b::Float64,
@@ -804,6 +908,25 @@ function solve_quadratic!(
 
 end
 
+"""
+
+    binary_search(lower_value::Float64, upper_value::Float64,
+                    stop_condition::Function, ε::Float64)
+
+Performs a binary search on the range [low_value, high_value] to 
+satisfy 'stop_condition' with tolerance 'ϵ'. 
+
+    - 'lower_value': lower value.
+
+    - 'upper_value': upper value.
+
+    - 'stop_condition': stop condition.
+
+    - 'ϵ': tolerance.
+
+Returns a estimate that satisfy the 'stop_condition'.
+
+"""
 function binary_search(
                         lower_value::Float64,
                         upper_value::Float64,
@@ -857,6 +980,30 @@ function binary_search(
 
 end
 
+"""
+
+    cond_θB(θ::Float64, a::Vector{Float64}, b::Vector{Float64}, xopt::Vector{Float64},
+        d::Vector{Float64}, proj_d::Vector{Float64}, s::Vector{Float64})
+
+Verifies in 'Θ' satisfies the ΘB condition for 'trsbox!' routine.
+
+    - 'Θ': value that will be tested.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'xopt': best sample point so far.
+
+    - 'd': first search direction 'd'.
+
+    - 'proj_d': projection of the direction 'd'.
+
+    - 's': second search direction 's'.
+
+Returns a boolean.
+
+"""
 function cond_θB(
                     θ::Float64,
                     a::Vector{Float64}, 
@@ -883,6 +1030,24 @@ function cond_θB(
 
 end
 
+"""
+
+    cond_θQ_linear(θ::Float64, gTd::Float64, gTpd::Float64, gTs::Float64)
+
+Verifies in 'Θ' satisfies the ΘQ condition for 'trsbox!' routine, in the liner case.
+
+    - 'Θ': value that will be tested.
+
+    - 'gTd': product of the direction 'd' by the gradient vector of the model evaluated in 'xopt'.
+
+    - 'gTd': product of the projection of the direction 'd' by the gradient vector of the
+    model evaluated in 'xopt'.
+
+    - 'gTs': product of the direction 's' by the gradient vector of the model evaluated in 'xopt'.
+
+Returns a boolean.
+
+"""
 function cond_θQ_linear(
                         θ::Float64, 
                         gTd::Float64, 
@@ -902,6 +1067,27 @@ function cond_θQ_linear(
 
 end
 
+"""
+
+    update_active_set!(a::Vector{Float64}, b::Vector{Float64},
+                        xopt::Vector{Float64}, d::Vector{Float64},
+                        active_set::Vector{Bool})
+
+Updates the active set.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+    - 'xopt': best sample point so far.
+
+    - 'd': search direction 'd'.
+
+The function modifies the argument:
+
+    - 'active_set': boolean n-dimensional vector with the active constraints.
+
+"""
 function update_active_set!(
                             a::Vector{Float64},
                             b::Vector{Float64},
@@ -928,6 +1114,44 @@ function update_active_set!(
 
 end
 
+"""
+
+    save_info!(model::AbstractModel, it_flag::Symbol, status_flag::Symbol,
+                full_calc::Bool, nit::Int64, nf::Int64, δ::Float64,
+                Δ::Float64, π::Float64, ρ::Float64, pred_red::Float64,
+                real_red::Float64, d::Vector{Float64}, file::IO)
+
+Saves information about the iterations.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+    - 'it_flag': iteration flag.
+
+    - 'status_flag': status flag.
+
+    - 'full_calc': indicates if ρ was full calculated.
+
+    - 'nit': number of iterations.
+
+    - 'nf': number of function evaluations.
+
+    - 'δ': sample set radius.
+
+    - 'Δ': trust-region radius.
+
+    - 'π': stationarity measure.
+ 
+    - 'ρ': relative reduction.
+
+    - 'pred_red': predicted reduction.
+
+    - 'real_red': real reduction.
+
+    - 'd': last computed direction.
+
+    - 'file': IO.
+
+"""
 function save_info!(
                     model::AbstractModel,
                     it_flag::Symbol,
@@ -993,6 +1217,17 @@ function save_info!(
     
 end
 
+"""
+
+    max_distance(model::AbstractModel)
+
+Calculates the max distance between the sample points and 'xbase'.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+Returns the max distance.
+
+"""
 function max_distance(
                         model::AbstractModel
                         )
@@ -1015,6 +1250,17 @@ function max_distance(
 
 end
 
+"""
+
+    choose_index_altmov(model::LinearModel)
+
+Chooses the point that must leave the sampling set for 'altmov' steps.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+Returns an index 't' which indicates the point that must leave the sample set.
+
+"""
 function choose_index_altmov(
                                 model::AbstractModel
                             )
