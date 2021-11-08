@@ -155,7 +155,7 @@ module LOWDER
             exit_flag = :max_evaluations
 
             # Creates the LOWDEROutput.
-            output = create_output(model, exit_flag, full_calc, nit, nf)
+            output = create_output(model, exit_flag, full_calc, nit, nf, δold, Δold, π)
 
             # Prints information about the iteration, exit flag and LOWDEROutput.
             print_info(model, output, it_flag, status_flag, full_calc, verbose, δ, Δ, π, ρ, pred_red, real_red, d)
@@ -384,7 +384,7 @@ module LOWDER
 
                 if saveinfo
     
-                    save_info!(model, it_flag, status_flag, full_calc, nit, nf, δ, Δ, π, ρ, pred_red, real_red, d, data_file)
+                    save_info!(model, it_flag, status_flag, full_calc, nit, nf, δold, Δold, π, ρ, pred_red, real_red, d, data_file)
                 
                 end
 
@@ -494,14 +494,14 @@ module LOWDER
         end
         
         # Creates the LOWDEROutput.
-        output = create_output(model, exit_flag, full_calc, nit, nf)
+        output = create_output(model, exit_flag, full_calc, nit, nf, δold, Δold, π)
 
         # Prints information about the iteration, exit flag and LOWDEROutput.
         print_info(model, output, it_flag, status_flag, full_calc, verbose, δold, Δold, π, ρ, pred_red, real_red, d)
 
         if saveinfo
     
-            save_info!(model, it_flag, status_flag, full_calc, nit, nf, δ, Δ, π, ρ, pred_red, real_red, d, data_file)
+            save_info!(model, it_flag, status_flag, full_calc, nit, nf, δold, Δold, π, ρ, pred_red, real_red, d, data_file)
             println(data_file, exit_flag)
             close(data_file)
         
