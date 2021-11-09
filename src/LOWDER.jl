@@ -369,9 +369,9 @@ module LOWDER
                 exit_flag = :max_evaluations
                 break
 
-            elseif ( δ ≤ δmin ) && ( max_distance( model ) ≤ δold )
+            elseif ( δ < δmin ) && ( Δ < δmin )
 
-                exit_flag = :small_sampling_radius
+                exit_flag = :stalled
                 break
 
             else
@@ -481,13 +481,13 @@ module LOWDER
 
                 # Updates 'model.xopt' and its function value.
                 @. model.xopt = x
-                model.fval[ model.kopt[] ] = fi_x
+                model.fval[ model.kopt[] + 1 ] = fi_x
 
             else
 
                 # Updates 'model.xopt' and its function value.
                 @. model.xopt = x
-                model.fval[ model.kopt[] ] = fi_x
+                model.fval[ model.kopt[] + 1 ] = fi_x
 
             end
             
