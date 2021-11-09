@@ -374,6 +374,11 @@ module LOWDER
                 exit_flag = :stalled
                 break
 
+            elseif δ < eps(Float64)
+
+                exit_flag = :small_sampling_radius
+                break
+
             else
 
                 if verbose ≥ 1
