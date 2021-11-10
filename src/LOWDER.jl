@@ -90,33 +90,32 @@ module LOWDER
         δcrit = exp( log( ( 1.0 - sqrt( eps( Float64 ) ) ) * δmin ) - maxcrit * log( τ1 ) )
 
         # Initializes useful variables, vectors, and matrices.
-        nρ = 0                      # Auxiliary counter for simplified 'ρ' calculations.
-        nΓ = 0                      # Auxiliary counter for radii adjustments phase.
-        nit = 0                     # Counts the number of iterations.
-        nf = 0                      # Counts the number of 'f_{i}' function evaluations.
-        ncrit = 0                   # Counts the number of consecutive criticality iterations.
-        ao = zeros(Float64, n)      # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
-        bo = zeros(Float64, n)      # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
-        d = zeros(Float64, n)       # TRSBOX or ALTMOV direction.
-        aux_v = zeros(Float64, n)   # Auxiliar vector for workspace.
-        aux_w = zeros(Float64, n)   # Auxiliar vector for workspace.
-        active_set = zeros(Bool, n) # Set of active constraints.
-        imin_set = zeros(Bool, r)   # Set I_{min}(x)
-        full_calc = false
-        verif_new_info = true
-        it_flag = :nonspecified
-        exit_flag = :nonspecified
-        status_flag = :nonspecified
-        fi_x = NaN
-        pred_red = NaN
-        real_red = NaN
-        ρ = NaN
-        π = NaN
-        norm_d = NaN
-        δold = NaN
-        Δold = NaN
-
-        naltmov = 0 #Counts the number of consecutive iterations of type ALTMOV
+        nρ = 0                        # Auxiliary counter for simplified 'ρ' calculations.
+        nΓ = 0                        # Auxiliary counter for radii adjustments phase.
+        nit = 0                       # Counts the number of iterations.
+        nf = 0                        # Counts the number of 'f_{i}' function evaluations.
+        ncrit = 0                     # Counts the number of consecutive criticality iterations.
+        naltmov = 0                   # Counts the number of consecutive iterations of type ALTMOV, ignoring criticality iterations.
+        fi_x = NaN                    # New function value.
+        pred_red = NaN                # Predicted reduction.
+        real_red = NaN                # Real reduction.
+        ρ = NaN                       # Relative reduction.
+        π = NaN                       # Stationarity measure.
+        norm_d = NaN                  # Norm of the computed direction 'd'.
+        δold = NaN                    # Radius of the sample set at the beginning of the iteration.
+        Δold = NaN                    # Radius of the trust-region at the beginning of the iteration.
+        full_calc = false             # Indicates that ρ was calculated using fmin.
+        verif_new_info = true         # Indicates the need to verify the information obtained in the last iteration. 
+        ao = zeros(Float64, n)        # Difference between the lower bounds 'a' and the center of the sample set, given by 'xbase'.
+        bo = zeros(Float64, n)        # Difference between the upper bounds 'b' and the center of the sample set, given by 'xbase'.
+        d = zeros(Float64, n)         # TRSBOX or ALTMOV direction.
+        aux_v = zeros(Float64, n)     # Auxiliar vector for workspace.
+        aux_w = zeros(Float64, n)     # Auxiliar vector for workspace.
+        active_set = zeros(Bool, n)   # Set of active constraints.
+        imin_set = zeros(Bool, r)     # Set I_{min}(x)
+        it_flag = :nonspecified       # Initializes the iteration flag.
+        exit_flag = :nonspecified     # Initializes the exit flag.
+        status_flag = :nonspecified   # Initializes the status flag.
 
         #-------------------- Preparations for the first iteration ---------------------
 
