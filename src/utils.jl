@@ -1219,39 +1219,6 @@ end
 
 """
 
-    max_distance(model::AbstractModel)
-
-Calculates the max distance between the sample points and 'xbase'.
-
-    - 'model': model of LinearModel or QuadraticModel type.
-
-Returns the max distance.
-
-"""
-function max_distance(
-                        model::AbstractModel
-                        )
-
-    max_dst = - Inf
-
-    for i = 1:( model.m - 1 )
-
-        aux = norm( model.Y[i, :] )
-
-        if max_dst ≤ aux
-
-            max_dst = aux
-
-        end
-
-    end
-
-    return max_dst
-
-end
-
-"""
-
     choose_index_altmov(model::LinearModel)
 
 Chooses the point that must leave the sampling set for 'altmov' steps.
