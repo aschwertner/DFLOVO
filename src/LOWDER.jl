@@ -27,8 +27,8 @@ module LOWDER
                     δ::Float64,
                     Δ::Float64;
                     m::Int64=(2 * length(x) + 1),
-                    maxit::Int64=5000,
-                    maxfun::Int64=(1000 * (length(func_list) + m)),
+                    maxit::Int64=(1000 * length(x)),
+                    maxfun::Int64=(1000 * length(func_list) * m),
                     maxcrit::Int64=(m - 1),
                     nρmax::Int64=3,
                     Γmax::Int64=1,
@@ -115,6 +115,8 @@ module LOWDER
         norm_d = NaN
         δold = NaN
         Δold = NaN
+
+        naltmov = 0 #Counts the number of consecutive iterations of type ALTMOV
 
         #-------------------- Preparations for the first iteration ---------------------
 
@@ -203,6 +205,7 @@ module LOWDER
 
                 # Update parameters and counter
                 ncrit += 1
+                naltmov = 0
                 ρ = NaN
                 pred_red = NaN
                 real_red = NaN
@@ -283,11 +286,26 @@ module LOWDER
 
                 if ρ < η1
 
-                    δ *= τ1
+                    if ρ > 0.0
 
-                    if ( max_distance( model ) ≤ δold )
-                    
-                        Δ *= τ1
+                        # Iterations of type 'trust_region' and 'bad_trust_region'.
+
+                        Δ = max( τ1 * Δ ,  δ )
+
+                    else
+
+                        # Iterations of type 'altmov'.
+
+                        if naltmov > ( model.m - 1 )
+
+                            δ *= τ1
+                            Δ *= τ1
+
+                        else
+
+                            Δ = max( τ1 * Δ ,  δ )
+
+                        end
 
                     end
 
@@ -312,6 +330,7 @@ module LOWDER
 
                 # Renitializes the counter
                 nρ = 0
+                naltmov = 0
 
             elseif ρ > 0.0
 
@@ -323,6 +342,7 @@ module LOWDER
 
                 # Updates the counters.
                 nρ += 1
+                naltmov = 0
 
             else
 
@@ -330,6 +350,16 @@ module LOWDER
                 if it_flag != :criticality
 
                     it_flag = :altmov
+
+                    if naltmov > ( model.m - 1 )
+
+                        naltmov = 0
+
+                    else
+
+                        naltmov += 1
+
+                    end
 
                 end
 
@@ -367,11 +397,6 @@ module LOWDER
             elseif nf ≥ maxfun
 
                 exit_flag = :max_evaluations
-                break
-
-            elseif ( δ < δmin ) && ( Δ < δmin )
-
-                exit_flag = :stalled
                 break
 
             elseif δ < eps(Float64)
