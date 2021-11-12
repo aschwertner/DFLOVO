@@ -28,7 +28,7 @@ module LOWDER
                     Δ::Float64;
                     m::Int64=(2 * length(x) + 1),
                     maxit::Int64=(1000 * length(x)),
-                    maxfun::Int64=(1000 * length(func_list) * m),
+                    maxfun::Int64=(1000 * length(func_list) * length(x)),
                     maxcrit::Int64=(m - 1),
                     nρmax::Int64=3,
                     Γmax::Int64=1,
