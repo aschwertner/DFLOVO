@@ -424,7 +424,7 @@ module LOWDER
 
             #--------------------------- Radii adjustments phase ---------------------------
 
-            if ρ > 0.0
+            if ( ρ > 0.0 && full_calc ) || ( ρ ≥ η )
 
                 if full_calc
 
@@ -470,9 +470,14 @@ module LOWDER
                 else
 
                     # Updates the model with TRSBOX information
-                    update_model!( t, fi_x, x, model, trsbox_step = true)
+                    update_model!( t, fi_x, x, model; trsbox_step = true)
 
                 end
+
+            elseif ρ > 0.0
+
+                # Updates the model with TRSBOX information
+                update_model!( t, fi_x, x, model; trsbox_step = true)
 
             else
 
