@@ -196,7 +196,7 @@ module LOWDER
                 exit_flag = :success
                 break
 
-            elseif ( ( δ ≤ δmin ) && ( Δ ≤ δmin ) && ( nalt ≥ maxalt ) )
+            elseif ( ( δ ≤ δmin ) && ( Δ ≤ δmin ) && ( nalt > maxalt ) )
 
                 # Sets exit flags
                 exit_flag = :stalled
