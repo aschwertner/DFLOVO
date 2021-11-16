@@ -306,8 +306,8 @@ module LOWDER
 
                         if nalt > maxalt
 
-                            δ *= τ1
-                            Δ *= τ1
+                            δ = max( τ1 * δ, δmin )
+                            Δ = max( τ1 * Δ, δmin )
 
                         else
 
