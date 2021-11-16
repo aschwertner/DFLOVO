@@ -381,7 +381,6 @@ module LOWDER
 
                 # Updates the counters.
                 nf += 1
-                nρ += 1
 
             end
 
