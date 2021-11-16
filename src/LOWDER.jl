@@ -30,6 +30,7 @@ module LOWDER
                     maxit::Int64=(1000 * length(x)),
                     maxfun::Int64=(1000 * length(func_list) * length(x)),
                     maxcrit::Int64=(m - 1),
+                    maxalt::Int64=(m - 1),
                     nρmax::Int64=3,
                     Γmax::Int64=1,
                     verbose::Int64=0,
@@ -62,6 +63,7 @@ module LOWDER
         @assert verify_initial_room(n, δ, a, b) "The radius of the initial sample set 'δ' is not suitable, it must satisfy a[i]- b[i] >= 2δ, for i = 1, ..., $(n)."
         @assert maxit > 0 "The parameter 'maxit' must be positive."
         @assert maxfun ≥ r "The parameter 'maxfun' must be greater than ou equal to $(r)."
+        @assert maxalt > 0 "The parameter 'maxalt' must be positive."
         @assert Γmax > 0 "The parameter 'Γmax' must be positive."
         @assert δmin > 0.0 "The parameter 'δmin' must be positive."
         @assert β > 0.0 "The parameter 'β' must be positive."
@@ -94,7 +96,7 @@ module LOWDER
         nit = 0                       # Counts the number of iterations.
         nf = 0                        # Counts the number of 'f_{i}' function evaluations.
         ncrit = 0                     # Counts the number of consecutive criticality iterations.
-        naltmov = 0                   # Counts the number of consecutive iterations of type ALTMOV, ignoring criticality iterations.
+        nalt = 0                      # Counts the number of consecutive iterations of type ALTMOV, ignoring criticality iterations.
         fi_x = NaN                    # New function value.
         pred_red = NaN                # Predicted reduction.
         real_red = NaN                # Real reduction.
@@ -188,8 +190,14 @@ module LOWDER
             # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'δmin / β', respectively.
             if ( ( δ ≤ δmin ) && ( β * π ≤ δmin ) )
 
-                # Sets iteration and exit flags
+                # Sets exit flags
                 exit_flag = :success
+                break
+
+            elseif ( ( δ ≤ δmin ) && ( Δ ≤ δmin ) && ( nalt ≥ maxalt ) )
+
+                # Sets exit flags
+                exit_flag = :stalled
                 break
 
             end
@@ -203,7 +211,7 @@ module LOWDER
 
                 # Update parameters and counter
                 ncrit += 1
-                naltmov = 0
+                nalt = 0
                 ρ = NaN
                 pred_red = NaN
                 real_red = NaN
@@ -294,7 +302,7 @@ module LOWDER
 
                         # Iterations of type 'altmov'.
 
-                        if naltmov > ( model.m - 1 )
+                        if nalt > maxalt
 
                             δ *= τ1
                             Δ *= τ1
@@ -328,7 +336,7 @@ module LOWDER
 
                 # Renitializes the counter
                 nρ = 0
-                naltmov = 0
+                nalt = 0
 
             elseif ρ > 0.0
 
@@ -340,7 +348,7 @@ module LOWDER
 
                 # Updates the counters.
                 nρ += 1
-                naltmov = 0
+                nalt = 0
 
             else
 
@@ -349,13 +357,13 @@ module LOWDER
 
                     it_flag = :altmov
 
-                    if naltmov > ( model.m - 1 )
+                    if nalt > maxalt
 
-                        naltmov = 0
+                        nalt = 0
 
                     else
 
-                        naltmov += 1
+                        nalt += 1
 
                     end
 
