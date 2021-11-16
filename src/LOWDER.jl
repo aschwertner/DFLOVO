@@ -34,7 +34,6 @@ module LOWDER
                     Γmax::Int64=1,
                     verbose::Int64=0,
                     δmin::Float64=1.0e-4,
-                    πmin::Float64=1.0e-4,
                     β::Float64=1.0,
                     τ1::Float64=0.6,
                     τ2::Float64=1.5,
@@ -186,8 +185,8 @@ module LOWDER
             # Computes the stationarity measure π = ||P_{Ω}(xopt - g) - xopt||
             π = stationarity_measure(model, a, b)
 
-            # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'πmin', respectively.
-            if ( ( δ ≤ δmin ) && ( π ≤ πmin ) )
+            # Verifies if 'δ' and 'π' are less than or equal to 'δmin' and 'δmin / β', respectively.
+            if ( ( δ ≤ δmin ) && ( β * π ≤ δmin ) )
 
                 # Sets iteration and exit flags
                 exit_flag = :success
