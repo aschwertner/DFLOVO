@@ -227,7 +227,7 @@ module LOWDER
 
                 else
                     
-                    δ *= τ1
+                    δ = max( τ1 * δ, δmin )
 
                 end
 
