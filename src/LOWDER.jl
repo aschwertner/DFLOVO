@@ -397,11 +397,6 @@ module LOWDER
                 exit_flag = :max_evaluations
                 break
 
-            elseif δ < eps(Float64)
-
-                exit_flag = :small_sampling_radius
-                break
-
             else
 
                 if verbose ≥ 1
