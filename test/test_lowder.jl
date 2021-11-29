@@ -21,12 +21,10 @@
         fmin_list = [f1, f2]
         a = [0.0, 0.0]
         b = [5.0, 5.0]
-        Δ = 1.5
-        δ = 1.0
 
         x = [1.0, 2.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 1.5, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
@@ -38,7 +36,7 @@
 
         x = [4.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 1.5, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -59,12 +57,10 @@
         fmin_list = [f3, f4]
         a = [0.0, 0.0]
         b = [5.0, 5.0]
-        Δ = 1.2
-        δ = 1.0
 
         x = [4.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 1.2, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
@@ -76,7 +72,7 @@
 
         x = [1.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 1.2, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -97,12 +93,10 @@
         fmin_list = [f5, f6]
         a = [0.0, 0.0]
         b = [5.0, 5.0]
-        Δ = 1.0
-        δ = 0.5
 
         x = [1.0, 3.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 0.5, Δ = 1.0, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
@@ -114,7 +108,7 @@
 
         x = [5.0, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 0.5, Δ = 1.0, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -136,12 +130,10 @@
         fmin_list = [f7, f8]
         a = [0.0, 0.0]
         b = [5.0, 5.0]
-        Δ = 1.2
-        δ = 1.0
 
         x = [5.0, 0.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3, η = 0.0)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 1.2, m = 3, η = 0.0)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -153,7 +145,7 @@
 
         x = [5.0, 0.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 1.2, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -164,10 +156,8 @@
         # --------------------------------------------------------------------------------
 
         x = [5.0, 3.0]
-        Δ = 2.0
-        δ = 1.0
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 2.0, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -178,10 +168,8 @@
         # --------------------------------------------------------------------------------
 
         x = [5.0, 5.0]
-        Δ = 2.0
-        δ = 1.0
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 2.0, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 2 )
@@ -202,12 +190,10 @@
         fmin_list = [f9, f10]
         a = [- 1.0, - 2.0]
         b = [1.5, 2.0]
-        Δ = 0.5
-        δ = 0.5
 
         x = [1.5, 1.0]
 
-        sol = LOWDER.lowder(fmin_list, x, a, b, δ, Δ; m = 3)
+        sol = LOWDER.lowder(fmin_list, x, a, b; δ = 0.5, Δ = 0.5, m = 3)
 
         @test( sol.status == :success )
         @test( sol.index == 1 )
