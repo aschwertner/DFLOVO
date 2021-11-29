@@ -159,7 +159,7 @@
 
         sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 2.0, m = 3)
 
-        @test( sol.status == :success )
+        @test( sol.status == :stalled )
         @test( sol.index == 2 )
         @test( sol.solution == [5.0, 4.0] )
 
@@ -171,7 +171,7 @@
 
         sol = LOWDER.lowder(fmin_list, x, a, b; δ = 1.0, Δ = 2.0, m = 3)
 
-        @test( sol.status == :success )
+        @test( sol.status == :stalled )
         @test( sol.index == 2 )
         @test( sol.solution == [5.0, 4.0] )
 
@@ -195,7 +195,7 @@
 
         sol = LOWDER.lowder(fmin_list, x, a, b; δ = 0.5, Δ = 0.5, m = 3)
 
-        @test( sol.status == :success )
+        @test( sol.status == :stalled )
         @test( sol.index == 1 )
         @test( isapprox( sol.solution, [0.0, 0.0], atol=1e-4 ) )
 
