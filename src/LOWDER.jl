@@ -23,9 +23,9 @@ module LOWDER
                     func_list::Array{Function,1},
                     x::Vector{Float64},
                     a::Vector{Float64}, 
-                    b::Vector{Float64},
-                    δ::Float64,
-                    Δ::Float64;
+                    b::Vector{Float64};
+                    δ::Float64=predefined_sample_radius(a, b),
+                    Δ::Float64=(1.5 * δ),
                     m::Int64=(2 * length(x) + 1),
                     maxit::Int64=(1000 * length(x)),
                     maxfun::Int64=(1000 * length(func_list) * length(x)),

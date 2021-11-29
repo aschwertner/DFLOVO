@@ -4,6 +4,44 @@
 
 """
 
+    predefined_sample_radius(a::Vector{Float64}, b::Vector{Float64})
+
+Calculates the initial value of the radius of the sample region 'δ' based on the lower and upper limits 'a' and 'b'.
+
+    - 'a': n-dimensional vector with the lower bounds.
+
+    - 'b': n-dimensional vector with the upper bounds.
+
+Returns the initial value of 'δ'.
+
+"""
+function predefined_sample_radius(
+                                    a::Vector{Float64}, 
+                                    b::Vector{Float64}
+                                    )
+
+    n = min( length(a), length(b) )
+    aux = b[1] - a[1]
+    aux2 = 0.0
+
+    for i = 2:n
+
+        aux2 = b[i] - a[i]
+
+        if aux2 < aux
+
+            aux = aux2
+
+        end
+
+    end
+
+    return min( aux / 2.0, 1.0 )
+
+end
+
+"""
+
     verify_initial_room(n::Int64, δ::Float64, a::Vector{Float64},
                         b::Vector{Float64})
 
