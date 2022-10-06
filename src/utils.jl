@@ -1275,7 +1275,7 @@ function save_history!(
                         file::IO
                         )
     
-    @printf(file, "%.7e %d", model.fval[model.kopt[] + 1], nf)
+    @printf(file, "%.7e %d\n", model.fval[model.kopt[] + 1], nf)
     
 end
 
@@ -1299,7 +1299,7 @@ function save_history!(
                         file::IO
                         )
 
-    @printf(file, "%.7e %d", f_value, nf)              
+    @printf(file, "%.7e %d\n", f_value, nf)              
 
 end
 
