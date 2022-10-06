@@ -1207,51 +1207,61 @@ function save_info!(
                     file::IO
                     )
     
-    text = "$( nit ) $( nf ) $( model.imin[] ) $( model.kopt[] ) $( δ ) $( Δ ) $( π ) $( it_flag ) $( status_flag ) $( full_calc ) $( ρ ) $( pred_red ) $( real_red ) $( model.c[] )"
+    #text = "$( nit ) $( nf ) $( model.imin[] ) $( model.kopt[] ) $( δ ) $( Δ ) $( π ) $( it_flag ) $( status_flag ) $( full_calc ) $( ρ ) $( pred_red ) $( real_red ) $( model.c[] )"
 
-    print( file, text )
+    text = @sprintf("%d %d %d %d %.4e %.4e %.4e %.4e %.3e %.3e %.3e ", nit, nf, model.imin[], model.kopt[], model.fval[model.kopt[] + 1], δ, Δ, π, ρ, pred_red, real_red)
 
-    for i = 1:model.n
+    text_xbase = "[" * join([@sprintf "%.3e" x for x in model.xbase], ", ") * "] "
 
-        print( file, " $( model.g[i] )" )
+    text_xopt = "[" * join([@sprintf "%.3e" x for x in model.xopt], ", ") * "] "
 
-    end
+    text_fval = "[" * join([@sprintf "%.3e" x for x in model.fval], ", ") * "]"
 
-    for i = 1:model.n
+    println( file, text, text_xbase, text_xopt, text_fval )
 
-        print( file, " $( model.xbase[i] )" )
+    #print( file, text )
 
-    end
+    #for i = 1:model.n
 
-    for i = 1:model.n
+    #    print( file, " $( model.g[i] )" )
 
-        print( file, " $( model.xopt[i] )" )
+    #end
 
-    end
+    #for i = 1:model.n
 
-    for i = 1:model.m
+    #    print( file, " $( model.xbase[i] )" )
 
-        print( file, " $( model.fval[i] )" )
+    #end
 
-    end
+    #for i = 1:model.n
 
-    for i = 1:(model.m - 1)
+    #    print( file, " $( model.xopt[i] )" )
 
-        for j = 1:model.n
+    #end
 
-            print( file, " $( model.Y[i, j] )" )
+    #for i = 1:model.m
 
-        end
+    #    print( file, " $( model.fval[i] )" )
 
-    end
+    #end
 
-    for i = 1:(model.n - 1)
+    #for i = 1:(model.m - 1)
 
-        print( file, " $( d[i] )" )
+    #    for j = 1:model.n
 
-    end
+    #        print( file, " $( model.Y[i, j] )" )
 
-    println( file, " $( d[model.n] )" )
+    #    end
+
+    #end
+
+    #for i = 1:(model.n - 1)
+
+    #    print( file, " $( d[i] )" )
+
+    #end
+
+    #println( file, " $( d[model.n] )" )
     
 end
 
