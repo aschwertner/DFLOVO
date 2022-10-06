@@ -1255,6 +1255,55 @@ function save_info!(
     
 end
 
+
+"""
+
+    save_history!(model::AbstractModel, nf::Int64, file::IO)
+
+Saves information about the history of function evaluations.
+
+    - 'model': model of LinearModel or QuadraticModel type.
+
+    - 'nf': number of function evaluations.
+
+    - 'file': IO.
+
+"""
+function save_history!(
+                        model::AbstractModel,
+                        nf::Int64,
+                        file::IO
+                        )
+    
+    @printf(file, "%.7e %d", model.fval[model.kopt[] + 1], nf)
+    
+end
+
+
+"""
+
+    save_history!(f_value::Float64, nf::Int64, file::IO)
+
+Saves information about the history of function evaluations.
+
+    - 'f_value': function value.
+
+    - 'nf': number of function evaluations.
+
+    - 'file': IO.
+
+"""
+function save_history!(
+                        f_value::Float64,
+                        nf::Int64,
+                        file::IO
+                        )
+
+    @printf(file, "%.7e %d", f_value, nf)              
+
+end
+
+
 """
 
     choose_index_altmov(model::LinearModel)

@@ -42,7 +42,8 @@ module LOWDER
                     η::Float64=0.1,
                     η1::Float64=0.3,
                     η2::Float64=0.6,
-                    filename::String=""
+                    filename::String="",
+                    history_filename::String=""
                     )
 
         # Calculates the search space dimension.
@@ -77,7 +78,7 @@ module LOWDER
         @assert η1 ≤ η2 "The parameter 'η2' must be greater than or equal to 'η1'."
         @assert 0 ≤ verbose ≤ 3 "The parameter 'verbose' must be 0, 1, 2 or 3."
 
-        # Verifies if the usuary wants to save a file with information of the iterations.
+        # Verifies if the usuary wants to save a file with full information of the iterations.
         if filename == ""
 
             saveinfo = false
@@ -85,6 +86,17 @@ module LOWDER
         else
 
             saveinfo = true
+
+        end
+
+        # Verifies if the usuary wants to save a file with information for data profile.
+        if history_filename == ""
+
+            savehistory = false
+
+        else
+
+            savehistory = true
 
         end
         
@@ -122,10 +134,24 @@ module LOWDER
 
         #-------------------- Preparations for the first iteration ---------------------
 
-        # Create an empty structure called 'model', which can hold a linear or quadratic model.
+        # Creates an empty structure called 'model', which can hold a linear or quadratic model.
         if n == (m - 1)
 
             model = LinearModel(n)
+
+        end
+
+        # Creates the file that will receive information about the iterations.
+        if saveinfo
+
+            data_file = open(filename, "w")
+
+        end
+
+        # Creates the file that will receive information about the function evaluations.
+        if savehistory
+
+            history_file = open(history_filename, "w")
 
         end
 
@@ -139,6 +165,13 @@ module LOWDER
         # Updates de function call counter.
         nf += r
 
+        # Saves information about function evaluations.
+        if savehistory
+        
+            save_history!(fi_x, nf, history_file)
+
+        end
+
         # Creates the initial model by modifying the structure of the previous 'model' 
         # and calculates the QR factorization of the matrix M associated with the model definition.
         construct_model!(func_list, imin_idx, δ, fi_x, x, ao, bo, model)
@@ -146,10 +179,11 @@ module LOWDER
         # Updates de function call counter.
         nf += n - 1
 
-        if saveinfo
-
-            data_file = open(filename, "w")
-
+        # Saves information about function evaluations.
+        if savehistory
+            
+            save_history!(model, nf, history_file)
+        
         end
 
         # Returns if 'nf' exceeds 'maxfun'.
@@ -170,6 +204,12 @@ module LOWDER
                 println(data_file, exit_flag)
                 close(data_file)
             
+            end
+
+            if savehistory
+            
+                close(history_file)
+
             end
 
             return output
@@ -420,6 +460,13 @@ module LOWDER
                 
                 end
 
+                # Saves information about function evaluations.
+                if savehistory
+        
+                    save_history!(model, nf, history_file)
+
+                end
+
             end
 
             #--------------------------- Radii adjustments phase ---------------------------
@@ -542,6 +589,14 @@ module LOWDER
             println(data_file, exit_flag)
             close(data_file)
         
+        end
+
+        # Saves information about function evaluations.
+        if savehistory
+            
+            save_history!(model, nf, history_file)
+            close(history_file)
+                
         end
         
         return output
