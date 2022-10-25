@@ -177,7 +177,7 @@ module LOWDER
         construct_model!(func_list, imin_idx, δ, fi_x, x, ao, bo, model)
 
         # Updates de function call counter.
-        nf += n - 1
+        nf += m - 1
 
         # Saves information about function evaluations.
         if savehistory
