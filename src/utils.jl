@@ -36,7 +36,8 @@ function predefined_sample_radius(
 
     end
 
-    return min( aux / 2.0, 1.0 )
+    #return min( aux / 2.0, 1.0 )
+    return min( aux / 2.0, 10.0 )
 
 end
 
